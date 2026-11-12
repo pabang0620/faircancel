@@ -23,7 +23,7 @@ The first user is a one-person seller of a weekly or monthly class pass who bill
 A fictional seller, Clay Studio, sells a $9 per week pottery class pass on PayPal Subscriptions. The subscriber's cancel page always shows "Cancel now" and what cancelling means ("If you cancel now: refund $X") before anything else.
 
 - Pause: at most one offer, always a pause (2, 4, 6 or 8 weeks from the merchant menu), never a discount. The Pause and Cancel now buttons are the same size. Pause is a PayPal `suspend`; FairCancel calls `activate` on the resume date.
-- Cancel: no offer for "too expensive". Cancel now is a PayPal `cancel`, and the unused days are refunded through PayPal, for example one day after the payment: $9.00 x 6.0 of 7 days unused = $7.71.
+- Cancel: no offer for "too expensive". Cancel now is a PayPal `cancel`, and the unused days are refunded through PayPal, for example one day after the payment: $9.00 x 5.99 of 7 days unused = $7.70.
 - Full refund: no class attended this week, so the full payment goes back (capped by anything already refunded).
 - Resume: a paused subscriber comes back in one click; a Sync button re-reads PayPal.
 

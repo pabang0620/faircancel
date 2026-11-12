@@ -33,13 +33,11 @@ export function reconcileBillingInfo(payment, billingInfoTime) {
   return { mismatch, billingInfoTime, transactionTime: new Date(payment.paidAt).toISOString() }
 }
 
-// One decimal when that is exact, else two decimals rounded down, so a payment made minutes ago reads
-// "6.99 of 7 days" next to $8.99, not "7.0 of 7 days" (S11 sandbox run).
-const daysLabel = (ms) => {
-  const days = Math.max(ms, 0) / DAY_MS
-  const one = days.toFixed(1)
-  return Math.abs(Number(one) - days) < 1e-6 ? one : (Math.floor(days * 100) / 100).toFixed(2)
-}
+// The unused time is shown in whole hundredths of a day (rounded down) and the amount is computed
+// from that same figure, so amount x shown days / period days reproduces the charged cents exactly
+// and never refunds more than the exact fraction.
+const unusedHundredths = (ms) => Math.floor((Math.max(ms, 0) * 100) / DAY_MS)
+const daysLabel = (hundredths) => (hundredths % 10 === 0 ? (hundredths / 100).toFixed(1) : (hundredths / 100).toFixed(2))
 
 /**
  * Refund quote for "cancel now". Pure function, no model involved.
@@ -66,6 +64,7 @@ export function quoteRefund({ transactions, usageCount, now, policy, billingInfo
   let cents
   let reason
   let formula
+  let unused = 0
   if (usageCount === 0 && policy.fullRefundIfNoUsage) {
     cents = payment.amountCents
     reason = 'zero_usage_full'
@@ -77,9 +76,10 @@ export function quoteRefund({ transactions, usageCount, now, policy, billingInfo
     reason = 'access_until_end'
     formula = `Access until ${new Date(periodEnd).toISOString()}`
   } else {
-    cents = Math.floor((payment.amountCents * remainingMs) / periodMs)
+    unused = unusedHundredths(remainingMs)
+    cents = Math.floor((payment.amountCents * unused) / (periodDays * 100))
     reason = 'prorated'
-    formula = `${usd(payment.amountCents)} x ${daysLabel(remainingMs)} of ${periodDays} days unused = ${usd(Math.min(cents, refundable))}`
+    formula = `${usd(payment.amountCents)} x ${daysLabel(unused)} of ${periodDays} days unused = ${usd(Math.min(cents, refundable))}`
   }
   const capped = Math.min(cents, refundable)
   return { ...detail, held: false, cents: capped, uncappedCents: cents, reason, formula, message: null }

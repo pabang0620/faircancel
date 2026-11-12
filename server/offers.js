@@ -30,8 +30,19 @@ export function validateProposal(proposal, { menu, reason, now }) {
 // appear in the reason is dropped.
 function quotedHint(hint, reason) {
   const h = String(hint || '').trim()
-  if (!h || h.length > 60) return null
-  return String(reason || '').toLowerCase().includes(h.toLowerCase()) ? h : null
+  if (!h || h.length > 200) return null
+  if (!String(reason || '').toLowerCase().includes(h.toLowerCase())) return null
+  return timePhrase(h)
+}
+
+const TIME_WORDS = /\b(after|until|till|when|by|in|for|next|weeks?|months?|days?|holidays?|school|summer|winter|spring|fall|january|february|march|april|may|june|july|august|september|october|november|december)\b/i
+
+// Only the time words are quoted: "Back after the holidays, my kid is home" -> "after the holidays".
+// The result is always a substring of the subscriber's text.
+export function timePhrase(text) {
+  const clause = text.split(/[,;.!?]/).map((c) => c.trim()).find((c) => TIME_WORDS.test(c)) || text
+  const trimmed = clause.replace(/^(i('| a)?m |i will be |we('| a)?re |will be |be )?(back|away|gone|off)\s+(?=(after|until|till|in|for|by|next|when)\b)/i, '').trim()
+  return (trimmed || clause).slice(0, 60)
 }
 
 // ctx.agentKind records who really decided: the Claude tool loop, or the rule-based stand-in.

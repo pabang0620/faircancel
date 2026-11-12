@@ -82,6 +82,26 @@ test('v1 sale refund path works when it is the fixed path', async () => {
 test('days_label_does_not_round_up_to_the_full_period', () => {
   const paidMinutesAgo = txn({ time: new Date(START - 5 * 60_000).toISOString() })
   const q = quoteRefund({ transactions: [paidMinutesAgo], usageCount: 1, now: START, policy })
-  assert.equal(q.cents, 899)
-  assert.equal(q.formula, '$9.00 x 6.99 of 7 days unused = $8.99')
+  assert.equal(q.cents, 898)
+  assert.equal(q.formula, '$9.00 x 6.99 of 7 days unused = $8.98')
+})
+
+test('formula_label_reproduces_the_charged_amount', () => {
+  for (const offsetMs of [0, 60_000, 5 * 60_000, 3_600_000, 7 * 3_600_000 + 12_345, 86_399_999, 2 * DAY_MS + 777]) {
+    for (const amount of ['9.00', '8.99', '19.95']) {
+      const t = txn({ time: new Date(START - offsetMs).toISOString(), amount_with_breakdown: { gross_amount: { currency_code: 'USD', value: amount } } })
+      const q = quoteRefund({ transactions: [t], usageCount: 1, now: START, policy })
+      const m = q.formula.match(/^\$([\d.]+) x ([\d.]+) of 7 days unused = \$([\d.]+)$/)
+      assert.ok(m, q.formula)
+      const shown = Math.floor((Math.round(Number(m[1]) * 100) * Math.round(Number(m[2]) * 100)) / 700)
+      assert.equal(shown, Math.round(Number(m[3]) * 100))
+      assert.equal(shown, q.cents)
+    }
+  }
+})
+
+test('hint_quotes_only_the_time_phrase', async () => {
+  const { timePhrase } = await import('../server/offers.js')
+  assert.equal(timePhrase('Back after the holidays, my kid is home'), 'after the holidays')
+  assert.equal(timePhrase('until mid-January'), 'until mid-January')
 })

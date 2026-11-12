@@ -39,7 +39,7 @@ Each case ran once, hero (b) four times. All answers came from the model (`agent
 | Case | Sentence | Tools in order | Rule card | Agent (model) | Time |
 |---|---|---|---|---|---|
 | hero (a) | Visiting family until mid-January, then I will be back | get_policy, get_subscription_state, propose_offer | pause 2 weeks | pause 8 weeks (you said mid-January) | 8.7 s |
-| hero (b) | Back after the holidays, my kid is home | get_policy, get_subscription_state, propose_offer | pause 2 weeks | pause 8 weeks (you said "Back after the holidays") | 7.2 s |
+| hero (b) | Back after the holidays, my kid is home | get_policy, get_subscription_state, propose_offer | pause 2 weeks | pause 8 weeks (you said "after the holidays") | 7.2 s |
 | billing | I was charged yesterday but couldn't make any class this week | get_policy, list_recent_payments, get_usage_record, quote_refund, propose_offer | no offer | no offer | 7.0 s |
 | too expensive | too expensive | get_policy, get_usage_record, quote_refund, propose_offer | no offer | no offer | 7.5 s |
 | hero (b) runs 2 to 4 | same | same three tools | pause 2 weeks | pause 8 weeks every time | 8.0, 7.3, 5.7 s |
@@ -72,6 +72,6 @@ Finding: account-mode latency on the sandbox was 7 to 16 s (slower than the 5 to
 ## Filming checklist (numbers must agree on one screen)
 
 1. Create and approve the filming seeds the night before (S2 takes minutes to hours). The screen shows the real "last paid" time under the plan name.
-2. The refund shown at Cancel now, in the result formula and in the refund card all come from the same server calculation. Film about one day after the payment and use whatever the screen shows ($7.71 for exactly 6.0 of 7 days). Update the README and the description text to the filmed numbers.
+2. The refund shown at Cancel now, in the result formula and in the refund card all come from the same server calculation. Film about one day after the payment and use whatever the screen shows (for example $7.70 for 5.99 of 7 days). Update the README and the description text to the filmed numbers.
 3. Set `REFUND_PATH` from S3 before the first take. Film one path only.
 4. Seed count: write the real number created and the measured S1/S2 times in the README. Top up with `create` + `approveSeeds.py` + `collect` once a day during judging (Dec 1 to Dec 15).
