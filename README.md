@@ -2,7 +2,9 @@
 
 # FairCancel
 
-**Try it:** https://faircancel.35-216-2-121.sslip.io (hosted demo: PayPal sandbox with a seeded subscription pool; when the pool is empty the page offers local mode; no login).
+**Demo video:** https://youtu.be/NJUsYnP5nzM | **Hosted demo:** https://faircancel.35-216-2-121.sslip.io | **Devpost:** https://devpost.com/software/faircancel
+
+**Try it:** https://faircancel.35-216-2-121.sslip.io (hosted demo: live Claude Sonnet (`claude-sonnet-5-5`) with per-IP-hour and per-day caps, and PayPal sandbox with a seeded subscription pool; when a cap is hit or the API fails it falls back to a labelled recorded run or the rule-based stand-in; when the pool is empty the page offers local mode; no login).
 
 FairCancel is the subscriber-facing cancel page. It does not change prices or plans (see Reprice Desk for that).
 
@@ -110,7 +112,7 @@ Without a model, local mode first looks for a recorded real run of the exact sen
 
 ### Real model
 
-The default run and `npm test` use the stand-in. `LLM_BACKEND=account` (local development, not for hosting) runs the same system prompt and seven tools through your Claude Code login with `claude-sonnet-5-5`, never an API key. It was run on 2026-11-12 (VERIFY C1): tools in the expected order, hero sentences answered by the model, 5.3 to 8.7 s per decision. That does not verify the hosted API path.
+The hosted demo calls Claude Sonnet (`claude-sonnet-5-5`) live through the API, within the caps in the settings table (`LLM_LIVE_PER_IP_HOUR`, `LLM_LIVE_PER_DAY`); over a cap or on any API error it falls back to a labelled recorded run or the rule-based stand-in. The default local run and `npm test` use the stand-in. `LLM_BACKEND=account` (local development, not for hosting) runs the same system prompt and seven tools through your Claude Code login with `claude-sonnet-5-5`, never an API key. It was run on 2026-11-12 (VERIFY C1): tools in the expected order, hero sentences answered by the model, 5.3 to 8.7 s per decision.
 
 Recorded runs: `npm run record:runs` ran each sentence below once through that account path and saved the run in `server/agent/recorded-runs/*.json` (tool calls in order with their inputs and arrival times, the model's final text, its proposal, wall time). The script skips a sentence that already has a file, so no sentence was recorded again to get a better answer. Besides the four "Try it" sentences there are ten more a subscriber might type: most give a return time in words code cannot read ("When school starts again", "once things settle down", "until the spring term"), a few give one it can ("six weeks", "Feb 3"), and three are not pauses at all. In local mode the server replays a recording only for its exact sentence (case and punctuation ignored): it runs the same tool calls in the same order against your subscription and puts the recorded proposal through the same server checks (menu value only, pause only, quoted words must be in the sentence, and a return time that code can read overrides the model's pick, so a recorded "8 weeks" is re-snapped to today). The dashboard labels it "Recorded run: Claude Sonnet, 2026-11-12" and the subscriber card marks the model's sentence as recorded; that sentence is hidden if the server changed the pause length or it names a dollar figure that is not today's server figure. A sentence with no recording goes to the rule-based stand-in, and both the dashboard and the subscriber card say so. `REPLAY_RECORDED_RUNS=0` turns replay off.
 
