@@ -1,0 +1,42 @@
+{
+  "name": "faircancel",
+  "version": "1.0.0",
+  "description": "A subscriber cancel page for PayPal Subscriptions sellers: one pause offer at most, Cancel now always visible, unused days refunded by code.",
+  "scripts": {
+    "build": "vite build",
+    "start": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "vite",
+    "test": "FORCE_MOCK=1 LLM_BACKEND=mock node --test test/*.test.js",
+    "seed:live": "node scripts/seedLive.js",
+    "seed:top-up": "bash scripts/topUpSeeds.sh",
+    "verify:model": "node scripts/verifyModel.js",
+    "verify:s3": "node scripts/verifyS3.js"
+  },
+  "keywords": [
+    "paypal",
+    "subscriptions",
+    "click-to-cancel",
+    "agent",
+    "claude"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.322",
+    "@anthropic-ai/sdk": "^1.6.0",
+    "@paypal/agent-toolkit": "^1.11.0",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.6"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}
