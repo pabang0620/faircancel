@@ -1,0 +1,61 @@
+{
+  "id": "extra_charged_again",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:41:04.475Z",
+  "today": "2026-11-12",
+  "scenario": 3,
+  "reason": "Why was I charged again? I thought I cancelled last week",
+  "totalMs": 5667,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2093,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "list_recent_payments",
+      "input": {},
+      "atMs": 2110,
+      "ok": true,
+      "summary": "1 payment"
+    },
+    {
+      "tool": "get_usage_record",
+      "input": {},
+      "atMs": 2569,
+      "ok": true,
+      "summary": "0 classes this week"
+    },
+    {
+      "tool": "quote_refund",
+      "input": {},
+      "atMs": 2577,
+      "ok": true,
+      "summary": "refund $9.00"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2590,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "none"
+      },
+      "atMs": 3587,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "none"
+  },
+  "modelText": "Your most recent charge was $9.00 on 2026-11-11, and your subscription is still active. If you cancel now, the quote is a full $9.00 refund because you attended no classes this week."
+}

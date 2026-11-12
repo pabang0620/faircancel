@@ -25,6 +25,7 @@ export const config = {
   llmLiveUntil: Date.parse(process.env.LLM_LIVE_UNTIL || '2026-12-22T00:00:00+09:00'),
   paypalClientId: forceMock ? '' : process.env.PAYPAL_CLIENT_ID || '',
   paypalClientSecret: forceMock ? '' : process.env.PAYPAL_CLIENT_SECRET || '',
+  paypalWebhookId: forceMock ? '' : process.env.PAYPAL_WEBHOOK_ID || '',
   // Fixed from the S3 result in VERIFY.md. Never switches at runtime.
   refundPath: process.env.REFUND_PATH === 'v1sale' ? 'v1sale' : 'v2capture',
   agentTimeoutMs: agentTimeoutFor(llmBackend, process.env.AGENT_TIMEOUT_MS),

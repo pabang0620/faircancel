@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { HttpError, parse, sessionIdSchema, subscriptionIdSchema } from './http.js'
 import { merchantPolicyPatchSchema } from './policy.js'
+import { verifyWebhookSignature } from './paypal/webhookVerify.js'
 
 const OFFERS_PER_IP_HOUR = Number(process.env.OFFERS_PER_IP_HOUR || 40)
 const hits = new Map()
@@ -58,7 +59,20 @@ export function createRouter(services, { modes, config }) {
     if (process.env.ALLOW_POLICY_EDIT !== '1') throw new HttpError(403, 'Policy editing is off on this demo.')
     return services.updatePolicy(parse(merchantPolicyPatchSchema, req.body))
   }))
-  api.post('/webhooks/paypal', wrap(async (req) => services.applyWebhook(parse(body.webhook, req.body))))
+  // Local mode: the event only triggers a re-read of the stand-in. Sandbox: PayPal must verify the signature first.
+  api.post('/webhooks/paypal', wrap(async (req) => {
+    const event = parse(body.webhook, req.body)
+    if (modes.paypal !== 'sandbox') return services.applyWebhook(event)
+    if (!config.paypalWebhookId) throw new HttpError(501, 'Set PAYPAL_WEBHOOK_ID to accept PayPal webhooks. The Sync button re-reads the subscription instead.')
+    const verification = await verifyWebhookSignature({ clientId: config.paypalClientId, clientSecret: config.paypalClientSecret, webhookId: config.paypalWebhookId, headers: req.headers, event: req.body }).catch(() => 'FAILURE')
+    if (verification !== 'SUCCESS') {
+      console.warn(`[webhook] ${event.id || '-'} ${event.event_type} rejected: signature not verified`)
+      throw new HttpError(401, 'Webhook signature could not be verified.')
+    }
+    const result = await services.applyWebhook(event)
+    console.log(`[webhook] ${event.id || '-'} ${event.event_type} verify-webhook-signature SUCCESS resource ${event.resource?.id || '-'} ${result.handled ? 're-read from PayPal' : 'not a subscription in use'}`)
+    return { ...result, verification }
+  }))
   return api
 }
 

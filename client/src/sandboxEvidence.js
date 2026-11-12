@@ -1,5 +1,5 @@
 // PASS items from VERIFY.md (run 2026-11-12). Only PASS rows are listed; a test checks each ID against VERIFY.md.
-// Open or failed items (S7, S10, V13, V14) are not claimed here.
+// Open or failed items (S7, V13, V14) are not claimed here.
 export const SANDBOX_EVIDENCE_DATE = '2026-11-12'
 
 export const SANDBOX_EVIDENCE = [
@@ -15,5 +15,6 @@ export const SANDBOX_EVIDENCE = [
   { id: 'S6', text: '5 subscriptions on one plan for one buyer, no limit hit' },
   { id: 'V11', text: 'last_payment.time equals the transaction time' },
   { id: 'V12', text: 'The 45-day transactions window returns the latest payment' },
+  { id: 'S10', text: 'Hosted server: a real BILLING.SUBSCRIPTION.CANCELLED webhook (WH-3KN7970943433161M-5NF93343Y9139834E) verified SUCCESS by verify-webhook-signature, then the subscription was re-read' },
   { id: 'C1', text: 'Claude Sonnet (local account) tool loop: tool order as asked, menu values only' },
 ]

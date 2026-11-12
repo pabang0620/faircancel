@@ -1,0 +1,44 @@
+{
+  "id": "extra_baby_due",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:28.673Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Our baby is due next month, I'll come back once things settle down",
+  "totalMs": 5744,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2015,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2029,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "I'll come back once things settle down"
+      },
+      "atMs": 3935,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "I'll come back once things settle down"
+  },
+  "modelText": "Congratulations on the baby! I've offered you an 8-week pause, the longest the menu allows, and \"Cancel now\" is still available if you'd rather stop."
+}

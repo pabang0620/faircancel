@@ -1,16 +1,19 @@
-// Records real model runs for the README sentences through the local Claude Code account
-// (LLM_BACKEND=account path, never an API key). RUN BY A PERSON. PayPal stays on the local stand-in.
+// Records real model runs for the sentences in server/agent/recordedCases.js through the local Claude Code
+// account (LLM_BACKEND=account path, never an API key). RUN BY A PERSON. PayPal stays on the local stand-in.
 // Writes server/agent/recorded-runs/<id>.json: tool calls in order with inputs and arrival times,
 // the model's final text, its proposal and the wall time. Local mode replays these files.
-//   node scripts/recordRuns.js            record every case
-//   node scripts/recordRuns.js hero_b     record one case
-import { writeFileSync, mkdirSync } from 'node:fs'
+// Each sentence is recorded once: a case that already has a file is skipped, so no sentence is recorded
+// again to get a better answer. Delete a file by hand to record that case again.
+//   node scripts/recordRuns.js                 record every case that has no file yet
+//   node scripts/recordRuns.js step4_hero_b    record one case (only if it has no file yet)
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { createApp } from '../server/app.js'
 import { config } from '../server/config.js'
 import { createToolContext } from '../server/agent/tools.js'
 import { accountDecide } from '../server/agent/accountAgent.js'
 import { RECORDED_DIR } from '../server/agent/replayAgent.js'
+import { RECORDED_CASES } from '../server/agent/recordedCases.js'
 
 delete process.env.ANTHROPIC_API_KEY
 delete process.env.ANTHROPIC_AUTH_TOKEN
@@ -18,14 +21,6 @@ delete process.env.ANTHROPIC_AUTH_TOKEN
 const MODEL_LABEL = 'Claude Sonnet'
 const cfg = { ...config, llmBackend: 'account', anthropicKey: '', paypalClientId: '', paypalClientSecret: '', llmLiveUntil: Infinity, agentTimeoutMs: 120_000, replayRecordedRuns: false }
 const { services } = createApp({ config: cfg, modes: { llm: 'account', paypal: 'local' }, clock: { now: () => Date.now() }, sandbox: null })
-
-// The exact sentences of the README "Try it" steps.
-const CASES = [
-  { id: 'step2_too_expensive', scenario: 2, reason: 'too expensive' },
-  { id: 'step3_hero_a', scenario: 1, reason: "Visiting family until mid-January, then I'll be back" },
-  { id: 'step4_hero_b', scenario: 1, reason: 'Back after the holidays, my kid is home' },
-  { id: 'step5_billing', scenario: 3, reason: "I was charged yesterday but couldn't make any class this week" },
-]
 
 async function record(c) {
   const sid = `record-${c.id}-${Date.now()}`
@@ -55,7 +50,11 @@ async function record(c) {
 }
 
 const only = process.argv[2]
-for (const c of CASES.filter((x) => !only || x.id === only)) {
+for (const c of RECORDED_CASES.filter((x) => !only || x.id === only)) {
+  if (existsSync(path.join(RECORDED_DIR, `${c.id}.json`))) {
+    process.stdout.write(`${c.id}: already recorded, skipped\n`)
+    continue
+  }
   try {
     process.stdout.write(`${JSON.stringify(await record(c))}\n`)
   } catch (err) {

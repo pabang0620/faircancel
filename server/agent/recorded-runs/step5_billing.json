@@ -21,7 +21,7 @@
       "input": {},
       "atMs": 2257,
       "ok": true,
-      "summary": "1 payments"
+      "summary": "1 payment"
     },
     {
       "tool": "get_usage_record",

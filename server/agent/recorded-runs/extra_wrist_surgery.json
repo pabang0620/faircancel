@@ -1,0 +1,37 @@
+{
+  "id": "extra_wrist_surgery",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:17.765Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Recovering from wrist surgery, the doctor said about six weeks",
+  "totalMs": 4941,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 1867,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 6,
+        "return_hint": "the doctor said about six weeks"
+      },
+      "atMs": 3073,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 6,
+    "return_hint": "the doctor said about six weeks"
+  },
+  "modelText": "I've offered a 6-week pause, which matches your doctor's estimate. \"Cancel now\" is still on screen if you'd rather cancel."
+}

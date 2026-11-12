@@ -17,6 +17,7 @@ function publicQuote(q) {
     message: q.message || null,
     held: !!q.held,
     paidAt: q.paidAt || null,
+    paidCents: q.payment?.amountCents ?? null,
     periodEnd: q.periodEnd || null,
     at: q.now,
     reconcileMismatch: !!q.reconcile?.mismatch,

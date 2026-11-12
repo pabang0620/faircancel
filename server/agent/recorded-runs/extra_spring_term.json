@@ -1,0 +1,44 @@
+{
+  "id": "extra_spring_term",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:34.418Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Need a break until the spring term",
+  "totalMs": 5670,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2103,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2116,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "until the spring term"
+      },
+      "atMs": 3720,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "until the spring term"
+  },
+  "modelText": "I've offered an 8-week pause, the longest the menu allows, since the spring term is more than 8 weeks away. \"Cancel now\" is still on your screen if you'd rather cancel."
+}

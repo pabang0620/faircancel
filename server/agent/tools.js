@@ -82,11 +82,14 @@ async function dispatch(ctx, name, input, state, sub) {
   }
 }
 
+// "1 payment", "2 payments", "0 classes".
+export const countOf = (n, one, many) => `${n} ${n === 1 ? one : many}`
+
 function summarize(name, result) {
   if (name === 'quote_refund') return `refund ${usd(Math.round(Number(result.refund_usd) * 100))}`
-  if (name === 'get_usage_record') return `${result.classes_attended_this_period} ${result.classes_attended_this_period === 1 ? 'class' : 'classes'} this week`
+  if (name === 'get_usage_record') return `${countOf(result.classes_attended_this_period, 'class', 'classes')} this week`
   if (name === 'get_subscription_state') return result.status
-  if (name === 'list_recent_payments') return `${result.payments.length} payments`
+  if (name === 'list_recent_payments') return countOf(result.payments.length, 'payment', 'payments')
   if (name === 'get_policy') return `pause ${result.pause_menu_weeks.join('/')}w, no discounts`
   return ''
 }

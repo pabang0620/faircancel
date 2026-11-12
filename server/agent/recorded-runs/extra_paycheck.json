@@ -1,0 +1,44 @@
+{
+  "id": "extra_paycheck",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:40.089Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Money is tight until my next paycheck in two weeks",
+  "totalMs": 6056,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 1886,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2765,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 2,
+        "return_hint": "my next paycheck in two weeks"
+      },
+      "atMs": 4046,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 2,
+    "return_hint": "my next paycheck in two weeks"
+  },
+  "modelText": "I've proposed a 2-week pause to cover the time until your next paycheck. The \"Cancel now\" button and your refund amount are still on screen if you'd rather cancel."
+}

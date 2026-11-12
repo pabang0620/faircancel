@@ -1,0 +1,47 @@
+{
+  "id": "extra_moving",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:52.230Z",
+  "today": "2026-11-12",
+  "scenario": 2,
+  "reason": "Moving across the country, no studio near my new place",
+  "totalMs": 5729,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 1988,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_usage_record",
+      "input": {},
+      "atMs": 3106,
+      "ok": true,
+      "summary": "1 class this week"
+    },
+    {
+      "tool": "quote_refund",
+      "input": {},
+      "atMs": 3139,
+      "ok": true,
+      "summary": "refund $7.70"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "none"
+      },
+      "atMs": 4088,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "none"
+  },
+  "modelText": "Moving away means a pause doesn't fit, so I'm not offering one. If you cancel now, your refund is $7.70."
+}

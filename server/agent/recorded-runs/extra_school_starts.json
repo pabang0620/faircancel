@@ -1,0 +1,44 @@
+{
+  "id": "extra_school_starts",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:10.526Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "When school starts again I will come back",
+  "totalMs": 7238,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 3190,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 3203,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "When school starts again I will come back"
+      },
+      "atMs": 5151,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "When school starts again I will come back"
+  },
+  "modelText": "I've proposed an 8-week pause, the longest the menu allows, since you said you'd return when school starts again. \"Cancel now\" is still on screen if you'd rather cancel."
+}

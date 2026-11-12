@@ -5,7 +5,7 @@ import { makeEnv, callsOf } from './helpers.js'
 import { installTransport, networkError, STATUS_INVALID_BODY, liveWith, fakeFetch } from './helpersToolkit.js'
 import { PayPalError, isTransient, isStatusInvalid, toolkitFailure } from '../server/paypal/errors.js'
 import { parseReturnHint, pauseWeeksFor } from '../server/returnHint.js'
-import { validateProposal } from '../server/offers.js'
+import { validateProposal, RETURN_LABEL } from '../server/offers.js'
 import { groupActivity } from '../client/src/activityGroups.js'
 
 const MENU = [2, 4, 6, 8]
@@ -381,7 +381,15 @@ test('offer_card_shows_what_the_subscriber_said', async () => {
   assert.match(read('client/src/components/OfferCard.jsx'), /you said \{offer\.returnHint\}/)
   const now = Date.parse('2026-11-12T20:00:00Z')
   assert.equal(validateProposal({ type: 'pause', weeks: 4, return_hint: 'a trip to $99.00 land' }, { menu: MENU, reason: 'taking a break', now }).returnHint, null)
-  assert.equal(validateProposal({ type: 'pause', weeks: 4, return_hint: 'a break' }, { menu: MENU, reason: 'taking a break', now }).returnHint, 'a break')
+  // REVIEW_6 F14: words with no time phrase get the neutral label, never the whole sentence.
+  assert.equal(validateProposal({ type: 'pause', weeks: 4, return_hint: 'a break' }, { menu: MENU, reason: 'taking a break', now }).returnHint, RETURN_LABEL)
+  const school = 'When school starts again I will come back'
+  assert.equal(validateProposal({ type: 'pause', weeks: 8, return_hint: school }, { menu: MENU, reason: school, now }).returnHint, 'when school starts again')
+  const baby = "Our baby is due next month, I'll come back once things settle down"
+  assert.equal(validateProposal({ type: 'pause', weeks: 8, return_hint: "I'll come back once things settle down" }, { menu: MENU, reason: baby, now }).returnHint, 'once things settle down')
+  const long = 'I will be back sometime, the kids need me and I need to sort out a very long list of things first'
+  assert.equal(validateProposal({ type: 'pause', weeks: 4, return_hint: long }, { menu: MENU, reason: long, now }).returnHint, RETURN_LABEL)
+  assert.equal(validateProposal({ type: 'pause', weeks: 4, return_hint: 'after the summer' }, { menu: MENU, reason: 'after the summer', now }).returnHint, RETURN_LABEL)
 })
 
 test('sync_result_fields_reach_the_merchant_panel', async () => {

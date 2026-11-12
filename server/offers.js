@@ -31,18 +31,32 @@ export function validateProposal(proposal, { menu, reason, now }) {
 function quotedHint(hint, reason) {
   const h = String(hint || '').trim()
   if (!h || h.length > 200) return null
-  if (!String(reason || '').toLowerCase().includes(h.toLowerCase())) return null
-  return timePhrase(h)
+  const reasonText = String(reason || '')
+  if (!reasonText.toLowerCase().includes(h.toLowerCase())) return null
+  const phrase = timePhrase(h)
+  // Never the whole message: a phrase that is the subscriber's entire sentence becomes the neutral label.
+  const plain = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  return plain(phrase) === plain(reasonText) ? RETURN_LABEL : phrase
 }
 
-const TIME_WORDS = /\b(after|until|till|when|by|in|for|next|weeks?|months?|days?|holidays?|school|summer|winter|spring|fall|january|february|march|april|may|june|july|august|september|october|november|december)\b/i
+const TIME_WORDS = /\b(after|until|till|when|once|by|in|for|next|weeks?|months?|days?|years?|holidays?|school|summer|winter|spring|fall|january|february|march|april|may|june|july|august|september|october|november|december)\b/i
+const LEAD = /\b(after|until|till|when|once|next|in|for|by)\b/i
+const TAIL = /\s+(then|and|i will|i'll|i am|i'm|we will|we'll)\b.*$/i
+const MAX_QUOTE = 40
 
-// Only the time words are quoted: "Back after the holidays, my kid is home" -> "after the holidays".
-// The result is always a substring of the subscriber's text.
+// Shown instead of a quote when the words hold no short time phrase. It is a paraphrase, not a quote.
+export const RETURN_LABEL = "you'd be back later"
+
+// Only the time words are quoted: "Back after the holidays, my kid is home" -> "after the holidays",
+// "When school starts again I will come back" -> "when school starts again". A quote is always a
+// substring of the subscriber's text (ignoring case); with no short time phrase the label is used.
 export function timePhrase(text) {
-  const clause = text.split(/[,;.!?]/).map((c) => c.trim()).find((c) => TIME_WORDS.test(c)) || text
-  const trimmed = clause.replace(/^(i('| a)?m |i will be |we('| a)?re |will be |be )?(back|away|gone|off)\s+(?=(after|until|till|in|for|by|next|when)\b)/i, '').trim()
-  return (trimmed || clause).slice(0, 60)
+  const clause = String(text || '').split(/[,;.!?]/).map((c) => c.trim()).find((c) => TIME_WORDS.test(c))
+  if (!clause) return RETURN_LABEL
+  const lead = clause.search(LEAD)
+  const phrase = (lead > 0 ? clause.slice(lead) : clause).replace(TAIL, '').trim()
+  if (!phrase || phrase.length > MAX_QUOTE) return RETURN_LABEL
+  return LEAD.test(phrase.split(/\s+/)[0]) ? phrase[0].toLowerCase() + phrase.slice(1) : phrase
 }
 
 // ctx.agentKind records who really decided: the Claude tool loop, or the rule-based stand-in.

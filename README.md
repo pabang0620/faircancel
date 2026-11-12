@@ -1,4 +1,8 @@
+<img src="client/public/logo-512.png" width="128" alt="logo" />
+
 # FairCancel
+
+**Try it:** https://faircancel.35-216-2-121.sslip.io (hosted demo: PayPal sandbox with a seeded subscription pool; when the pool is empty the page offers local mode; no login).
 
 FairCancel is the subscriber-facing cancel page. It does not change prices or plans (see Reprice Desk for that).
 
@@ -20,12 +24,12 @@ Churnkey's rebates are Stripe only (https://docs.churnkey.co/cancel-flows/offers
 
 ## Try it (judges)
 
-No PayPal login needed. `cp .env.example .env`, `npm install`, `npm run build`, `npm start`, open `http://localhost:3002/judge`. With no keys set the app runs in **local mode** (banner "local mode, no PayPal calls"); with sandbox keys and a seeded pool it uses real sandbox subscriptions. In local mode no model is called: for the four sentences below the dashboard replays a recorded real Claude Sonnet run and labels it "Recorded run: Claude Sonnet, 2026-11-12" (see "Real model"). Every step finishes in a few seconds; nothing waits on a timer.
+No PayPal login needed. `cp .env.example .env`, `npm install`, `npm run build`, `npm start`, open `http://localhost:3002/judge`. With no keys set the app runs in **local mode** (banner "local mode, no PayPal calls"); with sandbox keys and a seeded pool it uses real sandbox subscriptions. In local mode no model is called: for the sentences below (and the others in "Recorded runs") the dashboard replays a recorded real Claude Sonnet run and labels it "Recorded run: Claude Sonnet, 2026-11-12" (see "Real model"). Every step finishes in a few seconds; nothing waits on a timer.
 
 1. Open `/judge`. The top shows the pool: "N sandbox subscriptions ready" (or the local mode strip).
 2. Button **2 Cancel**: note the refund line under Cancel now. Type "too expensive" and Send: no offer. Press **Cancel now**: CANCELLED, the formula, e.g. `$9.00 x 5.99 of 7 days unused = $7.70` one day after the payment (your numbers depend on when the seed was charged), the refund ID, and the PayPal calls in the Activity list.
 3. Button **1 Pause**: type "Visiting family until mid-January, then I'll be back". The dashboard shows `Rule: pause 2 weeks` next to the agent's pick, and the subscriber card says "(you said mid-January)". The agent's pick is the menu value (2, 4, 6 or 8 weeks) closest to the number of weeks between today and January 15, so it depends on the day you try it: about 9 weeks away picks 8, about 6 weeks away picks 6, about 4 weeks away picks 4, and more than 12 weeks away gets no offer. Once January 15 has passed, the same sentence means next year and gets no offer; type "Visiting family, back in about 4 weeks" instead. Press Pause: SUSPENDED, "Resumes ..." (FairCancel calls `activate` on that date). In local mode the agent chip is the recorded run; the server still snaps its value to today's distance to January 15.
-4. Button **1 Pause** again (a new subscription), type **"Back after the holidays, my kid is home"**. No keyword code can read a return time here: the rule card says `pause 2 weeks`, while a model (see "Real model") reads the sentence, works out the weeks from today and picks a menu value, e.g. `pause 8 weeks (you said Back after the holidays, my kid is home)` in the recorded run of 2026-11-12. The server only checks that the value is on the menu and that the quoted words really are in the sentence. Any other sentence, in local mode, goes to the rule-based stand-in, which gives the rule value and says so.
+4. Button **1 Pause** again (a new subscription), type **"Back after the holidays, my kid is home"**. No keyword code can read a return time here: the rule card says `pause 2 weeks`, while a model (see "Real model") reads the sentence, works out the weeks from today and picks a menu value, e.g. `pause 8 weeks (you said after the holidays)` in the recorded run of 2026-11-12 (the server quotes only the time words of the subscriber's own sentence). The server only checks that the value is on the menu and that the quoted words really are in the sentence. Any other sentence, in local mode, goes to the rule-based stand-in, which gives the rule value and says so.
 5. Button **3 Full refund**: type "I was charged yesterday but couldn't make any class this week". "How FairCancel decided" lists the tool calls; Cancel now refunds the full $9.00.
 6. Button **4 Resume a paused one**: press Resume now: ACTIVE. Press **Sync** on the dashboard to re-read the state from PayPal.
 
@@ -49,6 +53,7 @@ Dev: `npm run dev:server` and `npm run dev:client` (Vite proxies `/api` to port 
 | Name | Default | Meaning |
 |---|---|---|
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | empty | Sandbox app credentials. Empty means local mode |
+| `PAYPAL_WEBHOOK_ID` | empty | Id of the sandbox webhook for `<PUBLIC_URL>/api/webhooks/paypal` (`BILLING.SUBSCRIPTION.*`). In sandbox mode a webhook is refused without it |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | empty, `claude-sonnet-5-5` | Claude for the agent. Empty means the rule-based stand-in makes the same tool calls |
 | `LLM_BACKEND` | empty (mock, or the key above) | `account` runs the same prompt and tools through the Claude Agent SDK with your local Claude Code login (development only, the API key is removed from its environment). The dashboard then says "Claude Sonnet (local account)" |
 | `LLM_LIVE_UNTIL` | 2026-12-22 | Model is never called after this moment |
@@ -105,16 +110,39 @@ Without a model, local mode first looks for a recorded real run of the exact sen
 
 The default run and `npm test` use the stand-in. `LLM_BACKEND=account` (local development, not for hosting) runs the same system prompt and seven tools through your Claude Code login with `claude-sonnet-5-5`, never an API key. It was run on 2026-11-12 (VERIFY C1): tools in the expected order, hero sentences answered by the model, 5.3 to 8.7 s per decision. That does not verify the hosted API path.
 
-Recorded runs: `npm run record:runs` ran the four README sentences once each through that account path and saved each run in `server/agent/recorded-runs/*.json` (tool calls in order with their inputs and arrival times, the model's final text, its proposal, wall time). In local mode the server replays a recording only for its exact sentence: it runs the same tool calls in the same order against your subscription and puts the recorded proposal through the same server checks, so a recorded "8 weeks" is still re-snapped to today. The dashboard labels it "Recorded run: Claude Sonnet, 2026-11-12" and the subscriber card marks the model's sentence as recorded. A recorded sentence is hidden if the server changed the pause length. `REPLAY_RECORDED_RUNS=0` turns replay off.
+Recorded runs: `npm run record:runs` ran each sentence below once through that account path and saved the run in `server/agent/recorded-runs/*.json` (tool calls in order with their inputs and arrival times, the model's final text, its proposal, wall time). The script skips a sentence that already has a file, so no sentence was recorded again to get a better answer. Besides the four "Try it" sentences there are ten more a subscriber might type: most give a return time in words code cannot read ("When school starts again", "once things settle down", "until the spring term"), a few give one it can ("six weeks", "Feb 3"), and three are not pauses at all. In local mode the server replays a recording only for its exact sentence (case and punctuation ignored): it runs the same tool calls in the same order against your subscription and puts the recorded proposal through the same server checks (menu value only, pause only, quoted words must be in the sentence, and a return time that code can read overrides the model's pick, so a recorded "8 weeks" is re-snapped to today). The dashboard labels it "Recorded run: Claude Sonnet, 2026-11-12" and the subscriber card marks the model's sentence as recorded; that sentence is hidden if the server changed the pause length or it names a dollar figure that is not today's server figure. A sentence with no recording goes to the rule-based stand-in, and both the dashboard and the subscriber card say so. `REPLAY_RECORDED_RUNS=0` turns replay off.
 
-| Step | Sentence | Tools the model called | Model pick | Time |
-|---|---|---|---|---|
-| 2 | too expensive | get_policy, get_usage_record, quote_refund, propose_offer | no offer | 7.8 s |
-| 3 | Visiting family until mid-January, then I'll be back | get_policy, get_subscription_state, propose_offer | pause 8 weeks | 5.6 s |
-| 4 | Back after the holidays, my kid is home | get_policy, get_subscription_state, propose_offer | pause 8 weeks | 6.1 s |
-| 5 | I was charged yesterday but couldn't make any class this week | get_policy, list_recent_payments, get_usage_record, quote_refund, propose_offer | no offer | 5.3 s |
+"Code reads a time" is what `parseReturnHint` finds without a model. "Server-checked result" is what the card showed on the recording day; for a sentence code can read it follows today's date.
+
+| Step | Sentence | Code reads a time | Tools the model called | Model pick | Server-checked result | Time |
+|---|---|---|---|---|---|---|
+| 2 | too expensive | no | get_policy, get_usage_record, quote_refund, propose_offer | no offer | no offer | 7.8 s |
+| 3 | Visiting family until mid-January, then I'll be back | yes ("mid-January") | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said mid-January) | 5.6 s |
+| 4 | Back after the holidays, my kid is home | no | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said after the holidays) | 6.1 s |
+| 5 | I was charged yesterday but couldn't make any class this week | no | get_policy, list_recent_payments, get_usage_record, quote_refund, propose_offer | no offer | no offer | 5.3 s |
+| - | When school starts again I will come back | no | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said when school starts again) | 7.2 s |
+| - | Recovering from wrist surgery, the doctor said about six weeks | yes ("six weeks") | get_policy, propose_offer | pause 6 weeks | pause 6 weeks (you said six weeks) | 4.9 s |
+| - | Travelling for work for the rest of the year | no | get_policy, propose_offer | pause 8 weeks | pause 8 weeks (you said the rest of the year) | 6.0 s |
+| - | Our baby is due next month, I'll come back once things settle down | no | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said once things settle down) | 5.7 s |
+| - | Need a break until the spring term | no | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said until the spring term) | 5.7 s |
+| - | Money is tight until my next paycheck in two weeks | yes ("two weeks") | get_policy, get_subscription_state, propose_offer | pause 2 weeks | pause 2 weeks (you said two weeks) | 6.1 s |
+| - | Out of the country until Feb 3 | yes ("Feb 3") | get_policy, get_subscription_state, propose_offer | pause 8 weeks | pause 8 weeks (you said Feb 3) | 6.1 s |
+| - | Moving across the country, no studio near my new place | no | get_policy, get_usage_record, quote_refund, propose_offer | no offer | no offer | 5.7 s |
+| - | Honestly I just never find the time to go | no | get_policy, get_usage_record, quote_refund, propose_offer | no offer | no offer | 6.5 s |
+| - | Why was I charged again? I thought I cancelled last week | no | get_policy, list_recent_payments, get_usage_record, quote_refund, get_subscription_state, propose_offer | no offer | no offer | 5.7 s |
 
 ## Compared with
+
+Each cell is what the vendor's own page says (links below the table); "not stated" means the page we read does not say.
+
+| | FairCancel | Churnkey | Chargebee Retention | ProsperStack | Stripe customer portal |
+|---|---|---|---|---|---|
+| PayPal Subscriptions as the billing system | Yes, calls the Subscriptions API directly (sandbox run S11) | Not native: native providers are Stripe, Chargebee, Paddle, Braintree; others go through callbacks you write | Not native: Stripe, Recurly, Chargebee Billing | Not in its list of 18 subscription platforms (Braintree is) | Stripe only |
+| Offers | One pause from the merchant's menu, never a discount | Discount, pause, plan switch, trial extension, rebate and more | Discount, pause, extension, plan change | Coupons, trial extensions, pauses, plan changes | A retention coupon |
+| Click to cancel | Cancel now always on screen; the merchant cannot switch it off (locked state layer) | Shows "Cancel Now" to California and New York customers, and recommends "a more aggressive Initial Offer" for them | Processing the cancel through the billing API is a setting: "enabled globally for all pages" or "configured on a per-page basis" | Not stated | Cancellation "is enabled by default" and is a portal setting |
+| Money back for unused days | Pro-rata refund computed by server code, sent through PayPal | Rebates are "Stripe only" | Not stated | Not stated | Not stated |
+
+Sources: Churnkey https://docs.churnkey.co/billing-providers/payment-provider-overview, https://docs.churnkey.co/cancel-flows/offers/rebate, https://docs.churnkey.co/cancel-flows/click-to-cancel; Chargebee Retention https://www.chargebee.com/docs/retention/integrations/chargebee-retention-billing-integrations-stripe-recurly-chargebee, https://www.chargebee.com/docs/retention/integrations/configuring-cancel-management-with-billing; ProsperStack https://prosperstack.com/integrations; Stripe https://docs.stripe.com/customer-management/cancellation-page (all read 2026-11-12).
 
 - Churnkey: its native billing providers are Stripe, Chargebee, Paddle and Braintree (https://docs.churnkey.co/billing-providers/payment-provider-overview); any other billing system goes through Churnkey Direct, where "you pass customer and subscription data directly and handle billing operations through callbacks" (https://docs.churnkey.co/billing-providers/direct-connect/direct). Its rebates are "Stripe only" (https://docs.churnkey.co/cancel-flows/offers/rebate). It shows a "Cancel Now" option to California and New York customers and recommends "a more aggressive Initial Offer than your default" for them (https://docs.churnkey.co/cancel-flows/click-to-cancel). FairCancel's rule is the opposite: one pause, never a discount, unused days go back.
 - Kajabi: "PayPal cancellations finish outside of Kajabi" (https://help.kajabi.com/en/articles/17175923). FairCancel finishes them on the seller's own page through the cancel API.
@@ -125,7 +153,7 @@ Reprice Desk changes prices and plans. FairCancel has no `update-pricing-schemes
 
 ## Webhooks
 
-`POST /api/webhooks/paypal` accepts `BILLING.SUBSCRIPTION.*` and payment events. The payload is only a hint: the server re-reads the subscription from PayPal (the same code as the Sync button) and never trusts the body. Event names and delivery are listed as S10 in `VERIFY.md`.
+`POST /api/webhooks/paypal` accepts `BILLING.SUBSCRIPTION.*` and payment events. The payload is only a hint: the server re-reads the subscription from PayPal (the same code as the Sync button) and never trusts the body. With sandbox keys an event is first checked with PayPal's `verify-webhook-signature` for `PAYPAL_WEBHOOK_ID` (unsigned or forged requests get 401). Proven on the hosted sandbox server (S10): a real `BILLING.SUBSCRIPTION.CANCELLED` event arrived about 30 s after Cancel now, verified SUCCESS and the subscription was re-read.
 
 ## Layout
 
@@ -133,7 +161,7 @@ Reprice Desk changes prices and plans. FairCancel has no `update-pricing-schemes
 
 ### Sandbox evidence (VERIFY.md, 2026-11-12)
 
-PASS today: S3 (subscription transaction ID works as a v2 capture ID, refund 201), S5 (a SUSPENDED subscription can be cancelled directly), S9 (same `PayPal-Request-Id`, one refund), S4 (suspend then activate keeps the billing date, API side), S8 (Toolkit cancel), V15 (wrong-state error text), S1, S2, S6 (seeding), V11, V12 (payment time and window), C1 (Claude Sonnet through the local account), S11 (the full Judge-mode walk on sandbox subscriptions: cancel, suspend, activate and two refunds, every ID read back from PayPal). Open: S7, S10. Partial: V13. Failed: V14 (handled, see below). The Judge page shows the same list under "Sandbox evidence" in the merchant dashboard.
+PASS today: S3 (subscription transaction ID works as a v2 capture ID, refund 201), S5 (a SUSPENDED subscription can be cancelled directly), S9 (same `PayPal-Request-Id`, one refund), S4 (suspend then activate keeps the billing date, API side), S8 (Toolkit cancel), V15 (wrong-state error text), S1, S2, S6 (seeding), V11, V12 (payment time and window), S10 (webhook delivery and signature check on the hosted server), C1 (Claude Sonnet through the local account), S11 (the full Judge-mode walk on sandbox subscriptions: cancel, suspend, activate and two refunds, every ID read back from PayPal). Open: S7. Partial: V13. Failed: V14 (handled, see below). The Judge page shows the same list under "Sandbox evidence" in the merchant dashboard.
 
 ### Sandbox findings (2026-11-12)
 

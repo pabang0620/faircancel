@@ -4,6 +4,7 @@ import { liveQuote, cancel, pause, resume, sync, runDueWork } from './cancelFlow
 import { requestOffer } from './offers.js'
 import { llmBackendOf } from './agent/backend.js'
 import { loadRecordings } from './agent/replayAgent.js'
+import { RECORDED_CASES } from './agent/recordedCases.js'
 
 let recordingList = null
 const loadedRecordings = () => (recordingList ||= loadRecordings())
@@ -40,7 +41,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
       cancelQuote: quote,
       quoteError,
       policy: { by: state.config.merchantName, setAt: state.policyStore.get().setAt },
-      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note, noteFrom: sub.offer.recorded ? `${sub.offer.recorded.modelLabel}, recorded ${sub.offer.recorded.date}` : null } : null,
+      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note, noteFrom: sub.offer.recorded ? `${sub.offer.recorded.modelLabel}, recorded ${sub.offer.recorded.date}` : null, decidedBy: sub.offer.source === 'agent' ? sub.offer.agentKind : sub.offer.source } : null,
       offerUsed: sub.offerRequested,
       pauseResult: sub.pauseResult,
       result: sub.result,
@@ -51,7 +52,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
   // Says what really answers as "Agent": Claude only with a key inside the paid window, else the stand-in.
   const agentBlock = () => {
     const backend = llmBackendOf(state.config, state.clock.now())
-    const recorded = backend === 'mock' && state.config.replayRecordedRuns ? loadedRecordings().map((r) => ({ reason: r.reason, scenario: r.scenario, modelLabel: r.modelLabel, date: r.recordedAt.slice(0, 10) })) : []
+    const recorded = backend === 'mock' && state.config.replayRecordedRuns ? loadedRecordings().map((r) => ({ reason: r.reason, scenario: r.scenario, step: RECORDED_CASES.find((c) => c.id === r.id)?.step ?? null, modelLabel: r.modelLabel, date: r.recordedAt.slice(0, 10) })) : []
     return { mode: backend === 'api' ? 'claude' : backend === 'account' ? 'claude-account' : 'stand-in', model: backend === 'mock' ? null : state.config.anthropicModel, recorded }
   }
 

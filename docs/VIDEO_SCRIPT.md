@@ -12,7 +12,7 @@ Open `http://localhost:3002/judge?film=1` in a fresh browser window at 1280x720,
 Two takes. Pick by what has passed in VERIFY.md on the filming day.
 
 - **Take A, sandbox** (preferred, needs a person): PayPal sandbox keys in `.env`, `LLM_BACKEND=account`, seeds created and approved the night before (`bash scripts/topUpSeeds.sh 10`). Badge "PayPal SANDBOX". Use it only after VERIFY S11 passes. The model answers live.
-- **Take B, local** (works today with a fresh copy of `.env.example`): badge "LOCAL MOCK", result cards say "mock". For the four sentences below the dashboard replays the recorded Claude Sonnet runs and says "Recorded run: Claude Sonnet, 2026-11-12". Scene 9 (PayPal dashboard) is replaced as noted.
+- **Take B, local** (works today with a fresh copy of `.env.example`): badge "LOCAL MOCK", result cards say "mock". For the sentences below (and the others in the README "Recorded runs" table) the dashboard replays the recorded Claude Sonnet runs and says "Recorded run: Claude Sonnet, 2026-11-12". Scene 9 (PayPal dashboard) is replaced as noted.
 
 Fill the braces with the values on screen: `{refund}` the refund at Cancel now, `{d}` unused days, `{weeks}` the pause length, `{resume}` the resume date, `{refundId}` the refund ID. Never copy numbers from PLAN.md.
 

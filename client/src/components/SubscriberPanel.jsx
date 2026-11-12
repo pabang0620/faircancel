@@ -5,7 +5,7 @@ import CancelNowBar from './CancelNowBar.jsx'
 import OfferCard from './OfferCard.jsx'
 import ResultCard from './ResultCard.jsx'
 
-export default function SubscriberPanel({ sessionId, subscriptionId, merchantStatus, hint = null }) {
+export default function SubscriberPanel({ sessionId, subscriptionId, merchantStatus, hint = null, onChange = null }) {
   const [view, setView] = useState(null)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState('')
@@ -22,7 +22,7 @@ export default function SubscriberPanel({ sessionId, subscriptionId, merchantSta
   async function run(name, fn) {
     setBusy(name)
     setError('')
-    try { const out = await fn(); setView(out.view || out) } catch (err) { setError(err.message); load() } finally { setBusy('') }
+    try { const out = await fn(); setView(out.view || out) } catch (err) { setError(err.message); load() } finally { setBusy(''); onChange?.() }
   }
 
   // Cancel now never waits for the agent: it only waits for its own fresh refund quote.
@@ -31,23 +31,34 @@ export default function SubscriberPanel({ sessionId, subscriptionId, merchantSta
     return api.cancel(sessionId, subscriptionId, reason)
   })
 
+  const merchantName = view?.merchantName || 'Clay Studio'
+  // Everything above Cancel now has the same height in every state (title, one plan row), so the button never moves.
   return (
     <section className="panel panel--sub" aria-label="Subscriber view">
-      <div className="panel__head">
-        <h2>Subscriber</h2>
-        <span className="muted small">{view?.merchantName || 'Clay Studio'} (fictional)</span>
+      <div className="store">
+        <span className="store__logo" aria-hidden="true" />
+        <strong className="store__name">{merchantName}</strong>
+        <span className="store__note">(fictional) &middot; Manage your subscription</span>
       </div>
-      <div className="substate">
-        <div>
-          <p className="substate__plan">{view ? `${view.planName} ${view.priceLabel}` : 'Loading...'}</p>
-          <p className="muted small mono">{subscriptionId}</p>
+      <div className="subcard">
+        <div className="substate">
+          <h2 className="substate__plan">{view ? `Your ${view.planName.toLowerCase()}` : 'Loading...'}</h2>
+          <div className="substate__row">
+            <span>{view ? view.priceLabel : ''}</span>
+            <span className="mono">{subscriptionId}</span>
+            {view ? <StatusBadge status={view.status} /> : null}
+          </div>
         </div>
-        {view ? <StatusBadge status={view.status} large /> : null}
+        <CancelNowBar view={view} busy={busy} onCancel={cancelNow} />
+        {view ? <StateBody view={view} reason={reason} setReason={setReason} busy={busy} run={run} sessionId={sessionId} subscriptionId={subscriptionId} /> : null}
+        {view && !view.offerUsed && view.status === 'ACTIVE' ? hint : null}
+        {error ? <p className="error" role="alert">{error}</p> : null}
+        <ul className="promises" aria-label="House rules">
+          <li>One offer at most, a pause only</li>
+          <li>Never a discount</li>
+          <li>Refund worked out by code</li>
+        </ul>
       </div>
-      <CancelNowBar view={view} busy={busy} onCancel={cancelNow} />
-      {view ? <StateBody view={view} reason={reason} setReason={setReason} busy={busy} run={run} sessionId={sessionId} subscriptionId={subscriptionId} /> : null}
-      {view && !view.offerUsed && view.status === 'ACTIVE' ? hint : null}
-      {error ? <p className="error" role="alert">{error}</p> : null}
     </section>
   )
 }
@@ -57,7 +68,11 @@ function StateBody({ view, reason, setReason, busy, run, sessionId, subscription
   if (view.status === 'SUSPENDED') {
     return (
       <div className="card card--state">
-        <p><strong>{view.backend === 'local' ? 'Paused (local stand-in).' : 'Paused on PayPal.'}</strong> Resumes {fmtDate(view.resumesAt)} (scheduled by FairCancel).</p>
+        <span className="card__icon card__icon--sage" aria-hidden="true">II</span>
+        <div className="card__body">
+          <p className="card__title">{view.backend === 'local' ? 'Paused (local stand-in).' : 'Paused on PayPal.'}</p>
+          <p className="card__text">Resumes {fmtDate(view.resumesAt)} (scheduled by FairCancel). No charge while paused.</p>
+        </div>
         <div className="actions">
           <button type="button" className="btn btn--action" onClick={() => run('resume', () => api.resume(sessionId, subscriptionId))} disabled={busy === 'resume'}>
             {busy === 'resume' ? 'Resuming...' : 'Resume now'}
@@ -68,7 +83,7 @@ function StateBody({ view, reason, setReason, busy, run, sessionId, subscription
   }
   return (
     <div className="stack">
-      <p className="muted small">Next charge {fmtDate(view.nextCharge)}{view.paidAt ? ` (last paid ${fmtDateTime(view.paidAt)})` : ''}</p>
+      <p className="nextcharge">Next charge {fmtDate(view.nextCharge)}{view.paidAt ? ` (last paid ${fmtDateTime(view.paidAt)})` : ''}</p>
       {view.offerUsed ? (
         <OfferCard view={view} busy={busy} onPause={() => run('pause', () => api.pause(sessionId, subscriptionId))} />
       ) : (

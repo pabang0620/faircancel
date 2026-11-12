@@ -1,0 +1,37 @@
+{
+  "id": "extra_work_travel",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:22.706Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Travelling for work for the rest of the year",
+  "totalMs": 5966,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2015,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "the rest of the year"
+      },
+      "atMs": 4110,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "the rest of the year"
+  },
+  "modelText": "I've offered an 8-week pause, which covers the rest of the year. The \"Cancel now\" button is still available if you'd rather cancel."
+}

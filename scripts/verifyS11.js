@@ -21,13 +21,17 @@ for (const sub of merchant.subscriptions) {
   if (paypal !== sub.status) mismatches += 1
   out(`subscription ${sub.id} app=${sub.status} paypal=${paypal} ${paypal === sub.status ? 'MATCH' : 'MISMATCH'}`)
 }
-for (const row of merchant.activity.filter((a) => a.ref && /refund$/.test(a.path))) {
-  const refund = (await pp.rest('GET', `/v2/payments/refunds/${row.ref}`)).data
-  const capture = row.path.split('/')[4]
-  const up = refund.links?.find((l) => l.rel === 'up')?.href || ''
-  const ok = refund.id === row.ref && up.endsWith(capture)
+for (const sub of merchant.subscriptions.filter((entry) => entry.refund)) {
+  const expected = sub.refund
+  const refund = (await pp.rest('GET', `/v2/payments/refunds/${expected.id}`)).data
+  const up = refund.links?.find((link) => link.rel === 'up')?.href || ''
+  const capture = up.split('/').pop()
+  const expectedAmount = (expected.amountCents / 100).toFixed(2)
+  const ok = refund.id === expected.id && capture === expected.txnId &&
+    refund.status === 'COMPLETED' && refund.amount?.currency_code === 'USD' &&
+    refund.amount?.value === expectedAmount
   if (!ok) mismatches += 1
-  out(`refund ${row.ref} app=${row.status} paypal=${refund.status} ${refund.amount?.value} ${refund.amount?.currency_code} capture=${capture} ${ok ? 'MATCH' : 'MISMATCH'}`)
+  out(`refund ${expected.id} app=USD ${expectedAmount} paypal=${refund.status} ${refund.amount?.value} ${refund.amount?.currency_code} capture=${capture} ${ok ? 'MATCH' : 'MISMATCH'}`)
 }
 out(`mismatches ${mismatches}`)
 process.exit(mismatches ? 2 : 0)

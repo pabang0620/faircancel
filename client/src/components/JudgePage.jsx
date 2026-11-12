@@ -70,8 +70,8 @@ export default function JudgePage({ sessionId }) {
 
   const pool = health?.pool
   const mine = merchant?.subscriptions.find((s) => s.id === active)
-  // Pause sentences that have a recorded real run (local mode only), in README order.
-  const recordedPauses = (merchant?.agent?.recorded || []).filter((r) => r.scenario === 1)
+  // README "Try it" pause sentences that have a recorded real run (local mode only), in README order.
+  const recordedPauses = (merchant?.agent?.recorded || []).filter((r) => r.scenario === 1 && r.step)
   // The hint sits under the reason box inside the subscriber panel, so nothing above Cancel now changes height
   // when it goes away (REVIEW_3 F2).
   const hint = mine?.scenario === 1 && !mine.reason ? (
@@ -81,10 +81,10 @@ export default function JudgePage({ sessionId }) {
   ) : null
   return (
     <div className="judge">
-      <header className="top" ref={topRef}>
-        <div className="brand"><strong>FairCancel</strong><span className="tag">Judge mode</span></div>
+      <header className={`top ${FILM ? 'top--film' : ''}`} ref={topRef}>
+        <div className="brand"><img className="brand-logo brand-logo--chip" src="/logo-512.png" width="28" height="28" alt="FairCancel" /><strong>FairCancel</strong><span className="tag">Judge mode</span></div>
         <nav className="scenarios" aria-label="Scenarios">
-          {SCENARIOS.map((s) => <button key={s.n} type="button" className="btn btn--scenario" onClick={() => claim(s.n)}>{s.label}</button>)}
+          {SCENARIOS.map((s) => <button key={s.n} type="button" className={`btn btn--scenario ${mine?.scenario === s.n ? 'btn--scenario-on' : ''}`} aria-pressed={mine?.scenario === s.n} onClick={() => claim(s.n)}>{s.label}</button>)}
           {FILM && pool ? <span className={`filmbadge ${pool.mode === 'sandbox' ? 'filmbadge--sandbox' : ''}`}>{pool.mode === 'sandbox' ? 'PayPal SANDBOX' : 'LOCAL MOCK'}</span> : null}
         </nav>
         <div className="top__status">
@@ -97,8 +97,11 @@ export default function JudgePage({ sessionId }) {
       ) : null}
       {notice ? <p className="notice" role="alert">{notice}</p> : null}
       <main className="split">
-        {active ? <SubscriberPanel key={active} sessionId={sessionId} subscriptionId={active} merchantStatus={mine?.status} hint={hint} /> : (
-          <section className="panel"><div className="panel__head"><h2>Subscriber</h2></div><p className="muted">Press a scenario button to get your own subscription.</p></section>
+        {active ? <SubscriberPanel key={active} sessionId={sessionId} subscriptionId={active} merchantStatus={mine?.status} hint={hint} onChange={refresh} /> : (
+          <section className="panel panel--sub">
+            <div className="store"><span className="store__logo" aria-hidden="true" /><strong className="store__name">Clay Studio</strong><span className="store__note">(fictional) &middot; Manage your subscription</span></div>
+            <div className="subcard"><h2 className="substate__plan">Subscriber</h2><p className="muted">Press a scenario button to get your own subscription.</p></div>
+          </section>
         )}
         <MerchantPanel data={merchant} onSync={sync} activeId={active} />
       </main>

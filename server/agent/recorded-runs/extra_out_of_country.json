@@ -1,0 +1,44 @@
+{
+  "id": "extra_out_of_country",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T06:40:46.145Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Out of the country until Feb 3",
+  "totalMs": 6085,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2763,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2780,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "Out of the country until Feb 3"
+      },
+      "atMs": 4186,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "Out of the country until Feb 3"
+  },
+  "modelText": "I've offered an 8-week pause, which is the longest the menu allows. Your trip runs about 12 weeks, so the pause won't cover all of it. \"Cancel now\" is still on screen if you'd rather cancel."
+}
