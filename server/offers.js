@@ -7,7 +7,7 @@ import { claudeDecide } from './agent/claudeAgent.js'
 import { accountDecide } from './agent/accountAgent.js'
 import { llmBackendOf } from './agent/backend.js'
 import { findRecording, replayDecide } from './agent/replayAgent.js'
-import { isOutage } from './fallback.js'
+import { LIVE_LIMIT_REASON, LIVE_ERROR_REASON } from './liveLimits.js'
 
 // Checks an agent proposal against the policy. Anything outside the menu or not a pause is dropped.
 export function validateProposal(proposal, { menu, reason, now }) {
@@ -60,24 +60,33 @@ export function timePhrase(text) {
 }
 
 // ctx.agentKind records who really decided: the Claude tool loop, or the rule-based stand-in.
-async function runAgent(state, ctx, agentImpl) {
+async function runAgent(state, ctx, agentImpl, { ip = null } = {}) {
   if (agentImpl) {
     ctx.agentKind = agentImpl === mockDecide ? 'stand-in' : agentImpl.kind || 'custom'
     return agentImpl(ctx)
   }
   const backend = llmBackendOf(state.config, state.clock.now())
+  let liveSkipped = false
   if (backend !== 'mock') {
-    ctx.agentKind = backend === 'account' ? 'claude-account' : 'claude'
-    const model = state.config.anthropicModel
-    try { return await (backend === 'account' ? accountDecide(ctx, { model }) : claudeDecide(ctx, { apiKey: state.config.anthropicKey, model })) } catch (err) {
-      if (!isOutage(err)) throw err
-      ctx.calls.length = 0
-      ctx.lookups = 0
-      ctx.proposal = null
+    if (!state.liveLimits.take(ip, state.clock.now())) {
+      liveSkipped = true
+      ctx.fallbackReason = LIVE_LIMIT_REASON
+    } else {
+      ctx.agentKind = backend === 'account' ? 'claude-account' : 'claude'
+      const model = state.config.anthropicModel
+      const live = state.liveDecide || (backend === 'account' ? accountDecide : (c, o) => claudeDecide(c, o))
+      try { return await live(ctx, { apiKey: state.config.anthropicKey, model }) } catch {
+        // Any API failure (network, 4xx/5xx, timeout, credit) falls back; the judge never sees the raw error.
+        liveSkipped = true
+        ctx.fallbackReason = LIVE_ERROR_REASON
+        ctx.calls.length = 0
+        ctx.lookups = 0
+        ctx.proposal = null
+      }
     }
   }
-  // Local mode: a recorded real model run is replayed for its exact sentence, labelled with its date.
-  const recording = backend === 'mock' && state.config.replayRecordedRuns ? findRecording(ctx.reason) : null
+  // A recorded real model run is replayed for its exact sentence, labelled with its date.
+  const recording = (backend === 'mock' || liveSkipped) && state.config.replayRecordedRuns ? findRecording(ctx.reason) : null
   if (recording) {
     ctx.agentKind = 'recorded'
     return replayDecide(ctx, recording)
@@ -109,7 +118,7 @@ function withTimeout(promise, ms) {
  * result is used only if it arrives within agentTimeoutMs. The sub lock is NOT held while the agent
  * runs, so Cancel now never waits for it.
  */
-export async function requestOffer(state, sub, reason, { agent } = {}) {
+export async function requestOffer(state, sub, reason, { agent, ip = null } = {}) {
   const text = String(reason || '').trim()
   if (!text) return { skipped: 'no_reason', offer: sub.offer ? sub.offer.shown : null }
   return state.withLock(`offer:${sub.id}`, async () => {
@@ -121,7 +130,7 @@ export async function requestOffer(state, sub, reason, { agent } = {}) {
     const menu = state.policyStore.get().merchant.pauseMenuWeeks
     const rule = ruleCard(text, menu)
     const ctx = createToolContext({ state, sub, reason: text })
-    const outcome = await withTimeout(runAgent(state, ctx, agent).then(() => 'done', () => 'error'), state.config.agentTimeoutMs)
+    const outcome = await withTimeout(runAgent(state, ctx, agent, { ip }).then(() => 'done', () => 'error'), state.config.agentTimeoutMs)
     const agentArrived = outcome === 'done'
     const agentResult = agentArrived ? validateProposal(ctx.proposal, { menu, reason: text, now }) : null
     const quoteCents = sub.quoteCache?.quote?.cents
@@ -134,6 +143,7 @@ export async function requestOffer(state, sub, reason, { agent } = {}) {
       rule,
       agent: agentResult,
       agentKind: agentArrived ? ctx.agentKind || 'stand-in' : null,
+      fallbackReason: agentArrived ? ctx.fallbackReason || null : null,
       agentLate: outcome === 'late',
       recorded: agentArrived && ctx.recorded ? ctx.recorded : null,
       steps: ctx.calls.map((c) => ({ tool: c.tool, ok: c.ok, summary: c.summary || '' })),

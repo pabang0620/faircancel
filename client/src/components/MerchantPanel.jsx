@@ -71,7 +71,7 @@ export default function MerchantPanel({ data, onSync, activeId = null }) {
             <p className="decision__reason">&ldquo;{d.reason}&rdquo;</p>
             <div className="vs">
               <div className="vs__rule">Rule<b>{offerText(d.rule)}</b></div>
-              <div className="vs__agent">{agentName(d.agentKind, d.recorded)}<b>{d.agentLate ? 'too slow, rule used' : offerText(d.agent)}</b></div>
+              <div className="vs__agent">{agentName(d.agentKind, d.recorded)}{d.fallbackReason ? ` (${d.fallbackReason})` : ''}<b>{d.agentLate ? 'too slow, rule used' : offerText(d.agent)}</b></div>
             </div>
             <p className="mono small">{d.steps.map((s) => s.tool).join(' -> ')}</p>
             <p className="muted small">{d.steps.filter((s) => s.summary).map((s) => `${s.tool}: ${s.summary}`).join('; ')}</p>

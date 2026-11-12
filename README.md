@@ -57,6 +57,8 @@ Dev: `npm run dev:server` and `npm run dev:client` (Vite proxies `/api` to port 
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | empty, `claude-sonnet-5-5` | Claude for the agent. Empty means the rule-based stand-in makes the same tool calls |
 | `LLM_BACKEND` | empty (mock, or the key above) | `account` runs the same prompt and tools through the Claude Agent SDK with your local Claude Code login (development only, the API key is removed from its environment). The dashboard then says "Claude Sonnet (local account)" |
 | `LLM_LIVE_UNTIL` | 2026-12-22 | Model is never called after this moment |
+| `LLM_LIVE_PER_IP_HOUR` | 10 | Live model runs one client IP can trigger per hour (one run per subscriber action). Over it, the recorded run or the rule-based stand-in answers and the card says "live limit reached" |
+| `LLM_LIVE_PER_DAY` | 150 | Live model runs this host allows per rolling day. Same fallback. Any API error (network, 4xx/5xx, timeout, credit) falls back the same way, never a raw error |
 | `REFUND_PATH` | `v2capture` | `v2capture` or `v1sale`. Fixed from the S3 check in `VERIFY.md`, never switches at runtime |
 | `PORT` | 3002 | Server port |
 | `DATA_DIR` | `data` | Policy file and seed pool file |

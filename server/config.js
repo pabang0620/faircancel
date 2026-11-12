@@ -32,6 +32,9 @@ export const config = {
   refundMaxTries: Number(process.env.REFUND_MAX_TRIES || 3),
   newSessionsPerIpHour: Number(process.env.NEW_SESSIONS_PER_IP_HOUR || 10),
   seedsPerIpHour: Number(process.env.SEEDS_PER_IP_HOUR || 12),
+  // Live model runs: one per subscriber action. Over a cap, the recorded run or the stand-in answers.
+  liveRunsPerIpHour: Number(process.env.LLM_LIVE_PER_IP_HOUR || 10),
+  liveRunsPerDay: Number(process.env.LLM_LIVE_PER_DAY || 150),
   maxSeedsPerSession: Number(process.env.MAX_SEEDS_PER_SESSION || 6),
   // Local mode replays recorded real model runs (server/agent/recorded-runs) for their exact sentences.
   replayRecordedRuns: process.env.REPLAY_RECORDED_RUNS !== '0',

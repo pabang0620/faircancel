@@ -44,7 +44,7 @@ export function createRouter(services, { modes, config }) {
   }))
   api.post('/subscriptions/:id/offer', wrap(async (req) => {
     const b = parse(body.offer, req.body)
-    return services.offer(b.sessionId, subId(req), b.reason, { forceMock: offerLimited(req.ip) })
+    return services.offer(b.sessionId, subId(req), b.reason, { forceMock: offerLimited(req.ip), ip: req.ip })
   }))
   api.post('/subscriptions/:id/pause', wrap(async (req) => services.pause(parse(body.withSession, req.body).sessionId, subId(req))))
   api.post('/subscriptions/:id/resume', wrap(async (req) => services.resume(parse(body.withSession, req.body).sessionId, subId(req))))

@@ -1,6 +1,7 @@
 import { createKeyedLock } from './lock.js'
 import { createActivityLog, instrument } from './paypal/gateway.js'
 import { HttpError } from './http.js'
+import { createLiveLimits } from './liveLimits.js'
 
 // Shared in-memory state plus small helpers every service module uses.
 export function createState({ clock = { now: () => Date.now() }, local, sandbox = null, policyStore, config }) {
@@ -17,6 +18,8 @@ export function createState({ clock = { now: () => Date.now() }, local, sandbox 
     refundCache: new Map(),
     refundAttempts: new Map(),
     ipLimits: new Map(),
+    liveLimits: createLiveLimits({ perIpHour: config.liveRunsPerIpHour ?? 10, perDay: config.liveRunsPerDay ?? 150 }),
+    liveDecide: null,
   }
 }
 

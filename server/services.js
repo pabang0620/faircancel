@@ -41,7 +41,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
       cancelQuote: quote,
       quoteError,
       policy: { by: state.config.merchantName, setAt: state.policyStore.get().setAt },
-      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note, noteFrom: sub.offer.recorded ? `${sub.offer.recorded.modelLabel}, recorded ${sub.offer.recorded.date}` : null, decidedBy: sub.offer.source === 'agent' ? sub.offer.agentKind : sub.offer.source } : null,
+      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note, noteFrom: sub.offer.recorded ? `${sub.offer.recorded.modelLabel}, recorded ${sub.offer.recorded.date}` : null, decidedBy: sub.offer.source === 'agent' ? sub.offer.agentKind : sub.offer.source, fallbackReason: sub.offer.fallbackReason || null } : null,
       offerUsed: sub.offerRequested,
       pauseResult: sub.pauseResult,
       result: sub.result,
@@ -71,7 +71,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
         refundError: s.refundError || null,
       })),
       agent: agentBlock(),
-      decisions: subs.filter((s) => s.offer).map((s) => ({ subscriptionId: s.id, reason: s.reason, rule: s.offer.rule, agent: s.offer.agent, agentKind: s.offer.agentKind, recorded: s.offer.recorded || null, agentLate: s.offer.agentLate, shown: s.offer.shown, source: s.offer.source, steps: s.offer.steps, shownAt: s.offer.shownAt })),
+      decisions: subs.filter((s) => s.offer).map((s) => ({ subscriptionId: s.id, reason: s.reason, rule: s.offer.rule, agent: s.offer.agent, agentKind: s.offer.agentKind, fallbackReason: s.offer.fallbackReason || null, recorded: s.offer.recorded || null, agentLate: s.offer.agentLate, shown: s.offer.shown, source: s.offer.source, steps: s.offer.steps, shownAt: s.offer.shownAt })),
       activity: state.activity.forSubscriptions(ids).slice(-80),
       reasonSummary: summarizeReasons(subs),
     }
@@ -90,9 +90,9 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
     },
     resetSession: (sessionId) => resetSession(state, seedFile, sessionId),
     async view(sessionId, subId, opts) { return subscriberView(ownedSub(state, sessionId, subId), opts) },
-    async offer(sessionId, subId, reason, { forceMock = false } = {}) {
+    async offer(sessionId, subId, reason, { forceMock = false, ip = null } = {}) {
       const sub = ownedSub(state, sessionId, subId)
-      const out = await requestOffer(state, sub, reason, { agent: forceMock ? mockDecide : agent })
+      const out = await requestOffer(state, sub, reason, { agent: forceMock ? mockDecide : agent, ip })
       return { offer: out.offer, repeat: !!out.repeat, skipped: out.skipped || null, view: await subscriberView(sub) }
     },
     async pause(sessionId, subId) {

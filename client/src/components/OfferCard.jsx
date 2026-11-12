@@ -6,7 +6,9 @@ const STAND_IN_LINE = 'Read by the rule-based stand-in: no model runs in local m
 // The Pause button has the same size and weight as the Cancel now button (see .btn--action).
 export default function OfferCard({ view, busy, onPause }) {
   const offer = view.offer
-  const standIn = offer?.decidedBy === 'stand-in' ? <p className="card__note">{STAND_IN_LINE}</p> : null
+  const why = offer?.fallbackReason ? ` (${offer.fallbackReason})` : ''
+  const standIn = offer?.decidedBy === 'stand-in' ? <p className="card__note">{offer.fallbackReason ? `Rule-based stand-in${why}: the live model did not answer this time.` : STAND_IN_LINE}</p>
+    : offer?.decidedBy === 'recorded' && offer.fallbackReason ? <p className="card__note">{`Recorded run${why}: the live model did not answer this time.`}</p> : null
   if (!offer || offer.type === 'none') {
     return (
       <div className="card card--offer card--none">
