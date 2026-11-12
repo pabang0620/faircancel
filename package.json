@@ -5,12 +5,14 @@
   "scripts": {
     "build": "vite build",
     "start": "node server/index.js",
+    "demo:video": "vite build && node scripts/demoVideo.js",
     "dev:server": "node --watch server/index.js",
     "dev:client": "vite",
     "test": "FORCE_MOCK=1 LLM_BACKEND=mock node --test test/*.test.js",
     "seed:live": "node scripts/seedLive.js",
     "seed:top-up": "bash scripts/topUpSeeds.sh",
     "verify:model": "node scripts/verifyModel.js",
+    "record:runs": "node scripts/recordRuns.js",
     "verify:s3": "node scripts/verifyS3.js"
   },
   "keywords": [

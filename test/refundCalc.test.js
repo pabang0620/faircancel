@@ -78,3 +78,10 @@ test('v1 sale refund path works when it is the fixed path', async () => {
   assert.equal(out.result.refund.amountLabel, '$7.71')
   assert.equal(callsOf(env, view.id, 'refundSale').length, 1)
 })
+
+test('days_label_does_not_round_up_to_the_full_period', () => {
+  const paidMinutesAgo = txn({ time: new Date(START - 5 * 60_000).toISOString() })
+  const q = quoteRefund({ transactions: [paidMinutesAgo], usageCount: 1, now: START, policy })
+  assert.equal(q.cents, 899)
+  assert.equal(q.formula, '$9.00 x 6.99 of 7 days unused = $8.99')
+})

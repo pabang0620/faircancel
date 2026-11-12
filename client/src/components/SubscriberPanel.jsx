@@ -5,7 +5,7 @@ import CancelNowBar from './CancelNowBar.jsx'
 import OfferCard from './OfferCard.jsx'
 import ResultCard from './ResultCard.jsx'
 
-export default function SubscriberPanel({ sessionId, subscriptionId, merchantStatus }) {
+export default function SubscriberPanel({ sessionId, subscriptionId, merchantStatus, hint = null }) {
   const [view, setView] = useState(null)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState('')
@@ -46,6 +46,7 @@ export default function SubscriberPanel({ sessionId, subscriptionId, merchantSta
       </div>
       <CancelNowBar view={view} busy={busy} onCancel={cancelNow} />
       {view ? <StateBody view={view} reason={reason} setReason={setReason} busy={busy} run={run} sessionId={sessionId} subscriptionId={subscriptionId} /> : null}
+      {view && !view.offerUsed && view.status === 'ACTIVE' ? hint : null}
       {error ? <p className="error" role="alert">{error}</p> : null}
     </section>
   )

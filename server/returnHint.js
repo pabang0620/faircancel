@@ -41,6 +41,9 @@ function isRealMonth(match, text) {
   return PREPOSITION_BEFORE.test(before.trimEnd() + ' ') && !VERB_AFTER.test(after)
 }
 
+// "six weeks" reads like "6 weeks" (REVIEW_3 F6).
+const NUMBER_WORDS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
+
 // Pulls a return time out of free text. Returns { weeks, returnAt, hint } or null.
 // weeks is a real number (not yet snapped to the merchant menu).
 // A month with no day: "mid-/early-/late-" pick that part of the month, "by/before <month>" means the
@@ -59,8 +62,11 @@ export function parseReturnHint(text, now) {
       return { weeks: (returnAt - now) / (7 * DAY_MS), returnAt, hint: capitalizeMonths(dateMatch[0].trim()) }
     }
   }
-  const weeksMatch = t.match(/(\d{1,2})\s*(?:-|to)?\s*(?:\d{1,2})?\s*weeks?/)
-  if (weeksMatch) return { weeks: Number(weeksMatch[1]), returnAt: now + Number(weeksMatch[1]) * 7 * DAY_MS, hint: weeksMatch[0].trim() }
+  const weeksMatch = t.match(new RegExp(`\\b(\\d{1,2}|${NUMBER_WORDS.join('|')})\\s*(?:-|to)?\\s*(?:\\d{1,2})?\\s*weeks?`))
+  if (weeksMatch) {
+    const n = NUMBER_WORDS.includes(weeksMatch[1]) ? NUMBER_WORDS.indexOf(weeksMatch[1]) + 1 : Number(weeksMatch[1])
+    return { weeks: n, returnAt: now + n * 7 * DAY_MS, hint: weeksMatch[0].trim() }
+  }
   const monthsMatch = t.match(/(\d{1,2}|a|one|two|three)\s*months?/)
   if (monthsMatch) {
     const words = { a: 1, one: 1, two: 2, three: 3 }

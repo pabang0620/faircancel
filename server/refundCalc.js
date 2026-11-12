@@ -33,7 +33,13 @@ export function reconcileBillingInfo(payment, billingInfoTime) {
   return { mismatch, billingInfoTime, transactionTime: new Date(payment.paidAt).toISOString() }
 }
 
-const daysLabel = (ms) => (Math.max(ms, 0) / DAY_MS).toFixed(1)
+// One decimal when that is exact, else two decimals rounded down, so a payment made minutes ago reads
+// "6.99 of 7 days" next to $8.99, not "7.0 of 7 days" (S11 sandbox run).
+const daysLabel = (ms) => {
+  const days = Math.max(ms, 0) / DAY_MS
+  const one = days.toFixed(1)
+  return Math.abs(Number(one) - days) < 1e-6 ? one : (Math.floor(days * 100) / 100).toFixed(2)
+}
 
 /**
  * Refund quote for "cancel now". Pure function, no model involved.

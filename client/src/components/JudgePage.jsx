@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, storage } from '../api.js'
 import SubscriberPanel from './SubscriberPanel.jsx'
 import MerchantPanel from './MerchantPanel.jsx'
@@ -18,6 +18,20 @@ export default function JudgePage({ sessionId }) {
   const [active, setActive] = useState(() => storage.get()?.active || null)
   const [notice, setNotice] = useState('')
   const [poolEmpty, setPoolEmpty] = useState(null)
+  const topRef = useRef(null)
+
+  // The sticky Cancel now bar sits right under the sticky header. The header wraps to more lines on narrow
+  // windows (1280x720 at 125% zoom), so its real height is measured; a fixed offset hid Cancel now under it.
+  useEffect(() => {
+    const el = topRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return undefined
+    const root = document.documentElement
+    const apply = () => root.style.setProperty('--top-h', `${Math.ceil(el.getBoundingClientRect().height)}px`)
+    apply()
+    const observer = new ResizeObserver(apply)
+    observer.observe(el)
+    return () => { observer.disconnect(); root.style.removeProperty('--top-h') }
+  }, [])
 
   const refresh = useCallback(async () => {
     try { setMerchant(await api.merchant(sessionId)); setHealth(await api.health()) } catch { /* server restarting */ }
@@ -56,9 +70,18 @@ export default function JudgePage({ sessionId }) {
 
   const pool = health?.pool
   const mine = merchant?.subscriptions.find((s) => s.id === active)
+  // Pause sentences that have a recorded real run (local mode only), in README order.
+  const recordedPauses = (merchant?.agent?.recorded || []).filter((r) => r.scenario === 1)
+  // The hint sits under the reason box inside the subscriber panel, so nothing above Cancel now changes height
+  // when it goes away (REVIEW_3 F2).
+  const hint = mine?.scenario === 1 && !mine.reason ? (
+    <p className="notice notice--hint">{recordedPauses.length
+      ? <>Sentences with a recorded Claude run: {recordedPauses.map((r, i) => <span key={r.reason}>{i ? ' or, on a new Pause, ' : ''}&ldquo;{r.reason}&rdquo;</span>)}. Keywords cannot read the last one, a model can.</>
+      : <>Try a date (&ldquo;Visiting family until a date you choose&rdquo;) or, on a new Pause, &ldquo;Back after the holidays, my kid is home&rdquo;: keywords cannot read that one, a model can.</>}</p>
+  ) : null
   return (
     <div className="judge">
-      <header className="top">
+      <header className="top" ref={topRef}>
         <div className="brand"><strong>FairCancel</strong><span className="tag">Judge mode</span></div>
         <nav className="scenarios" aria-label="Scenarios">
           {SCENARIOS.map((s) => <button key={s.n} type="button" className="btn btn--scenario" onClick={() => claim(s.n)}>{s.label}</button>)}
@@ -73,11 +96,8 @@ export default function JudgePage({ sessionId }) {
         <p className="notice">All sandbox subscriptions are in use. <button type="button" className="link" onClick={() => claim(poolEmpty, true)}>Continue in local mode</button></p>
       ) : null}
       {notice ? <p className="notice" role="alert">{notice}</p> : null}
-      {mine?.scenario === 1 && !mine.reason ? (
-        <p className="notice notice--hint">Try a date ("Visiting family until a date you choose") or, on a new Pause, "Back after the holidays, my kid is home": keywords cannot read that one, a model can.</p>
-      ) : null}
       <main className="split">
-        {active ? <SubscriberPanel key={active} sessionId={sessionId} subscriptionId={active} merchantStatus={mine?.status} /> : (
+        {active ? <SubscriberPanel key={active} sessionId={sessionId} subscriptionId={active} merchantStatus={mine?.status} hint={hint} /> : (
           <section className="panel"><div className="panel__head"><h2>Subscriber</h2></div><p className="muted">Press a scenario button to get your own subscription.</p></section>
         )}
         <MerchantPanel data={merchant} onSync={sync} activeId={active} />

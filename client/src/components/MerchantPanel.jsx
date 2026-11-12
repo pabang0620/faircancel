@@ -1,10 +1,12 @@
 import { fmtDate, fmtDateTime } from '../api.js'
 import StatusBadge from './StatusBadge.jsx'
 import { groupActivity } from '../activityGroups.js'
+import { SANDBOX_EVIDENCE, SANDBOX_EVIDENCE_DATE } from '../sandboxEvidence.js'
 import { orderDecisions, subRowClass, decisionClass, activityClass } from '../panelOrder.js'
 
 const offerText = (o) => (!o ? '-' : o.type === 'pause' ? `pause ${o.weeks} weeks${o.returnHint ? ` (you said ${o.returnHint})` : ''}` : 'no offer')
-const agentName = (kind) => (kind === 'claude' ? 'Agent (Claude)' : kind === 'claude-account' ? 'Agent (Claude Sonnet, local account)' : kind === 'custom' ? 'Agent' : 'Agent (rule-based stand-in)')
+const agentName = (kind, rec) => (kind === 'recorded' && rec ? `Recorded run: ${rec.modelLabel}, ${rec.date}` : kind === 'claude' ? 'Agent (Claude)' : kind === 'claude-account' ? 'Agent (Claude Sonnet, local account)' : kind === 'custom' ? 'Agent' : 'Agent (rule-based stand-in)')
+const secs = (ms) => `${(ms / 1000).toFixed(1)} s`
 
 export default function MerchantPanel({ data, onSync, activeId = null }) {
   if (!data) return <section className="panel"><div className="panel__head"><h2>Merchant dashboard</h2></div><p className="muted">Loading...</p></section>
@@ -40,13 +42,16 @@ export default function MerchantPanel({ data, onSync, activeId = null }) {
         ? <p className="agent-note agent-note--live">Agent: Claude ({data.agent.model}) is answering.</p>
         : data.agent?.mode === 'claude-account'
         ? <p className="agent-note agent-note--live">Agent: Claude Sonnet (local account, {data.agent.model}) is answering. Development run, not the hosted API.</p>
+        : data.agent?.recorded?.length
+        ? <p className="agent-note">No model is called in local mode. For the {data.agent.recorded.length} README sentences, "Agent" replays a recorded real run ({data.agent.recorded[0].modelLabel} through a local Claude Code account, {data.agent.recorded[0].date}): the same tool calls in the same order on this subscription, then the same server checks. Any other sentence goes to the rule-based stand-in, a program that makes the same tool calls.</p>
         : <p className="agent-note">No model key is set, so "Agent" below is the rule-based stand-in: it makes the same tool calls but a program, not a model, reads the reason.</p>}
       {data.decisions.length === 0 ? <p className="muted small">Type a reason on the subscriber side.</p> : orderDecisions(data.decisions).map((d) => (
         <div key={d.subscriptionId} className={decisionClass(d, activeId)}>
           <p className="small">&ldquo;{d.reason}&rdquo;</p>
-          <p><span className="chip">Rule: {offerText(d.rule)}</span> <span className="chip chip--agent">{agentName(d.agentKind)}: {d.agentLate ? 'too slow, rule used' : offerText(d.agent)}</span></p>
+          <p><span className="chip">Rule: {offerText(d.rule)}</span> <span className="chip chip--agent">{agentName(d.agentKind, d.recorded)}: {d.agentLate ? 'too slow, rule used' : offerText(d.agent)}</span></p>
           <p className="mono small">{d.steps.map((s) => s.tool).join(' -> ')}</p>
           <p className="muted small">{d.steps.filter((s) => s.summary).map((s) => `${s.tool}: ${s.summary}`).join('; ')}</p>
+          {d.recorded ? <p className="muted small">The model took {secs(d.recorded.totalMs)} in the recorded run on {d.recorded.today}. Replayed here, not called.</p> : null}
           <p className="small">Shown to subscriber: <strong>{offerText(d.shown)}</strong> ({d.source})</p>
         </div>
       ))}
@@ -71,6 +76,14 @@ export default function MerchantPanel({ data, onSync, activeId = null }) {
         <p><strong>{policy.merchantName}:</strong> pause menu {policy.pauseMenuWeeks.join('/')} weeks, {policy.refundMode === 'prorate' ? 'refund unused days' : 'access until period end'}, {policy.fullRefundIfNoUsage ? 'full refund if no class attended' : 'no full-refund rule'}. Set {fmtDateTime(policy.setAt)}.</p>
         <p className="muted small">House rules: one offer at most, a pause only, never a discount.</p>
       </div>
+
+      <details className="policy evidence">
+        <summary><strong>Sandbox evidence</strong> <span className="muted small">PASS items from VERIFY.md, {SANDBOX_EVIDENCE_DATE}</span></summary>
+        <ul className="small">
+          {SANDBOX_EVIDENCE.map((e) => <li key={e.id}><span className="mono">{e.id}</span> PASS: {e.text}</li>)}
+        </ul>
+        <p className="muted small">Still open: webhooks (S10, needs a public host), the 7-day renewal (S7). V14 failed: the capture shows no refunded total, so a lost refund answer ends as "refund by hand".</p>
+      </details>
 
       {data.reasonSummary.length ? (
         <>

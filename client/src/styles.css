@@ -53,7 +53,7 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhe
 @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
 
 /* Cancel now: same place, same size as the offer button, never hidden */
-.cancelbar { position: sticky; top: 64px; z-index: 4; background: var(--bg); padding: 10px 0; margin-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.cancelbar { position: sticky; top: var(--top-h, 64px); z-index: 4; background: var(--bg); padding: 10px 0; margin-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .cancelbar__line { margin: 0; text-align: right; font-weight: 600; }
 .btn--action { min-width: 180px; min-height: 48px; font-size: 17px; border: 2px solid var(--accent); background: #fff; color: var(--accent); }
 .btn--action:hover:not(:disabled) { background: #eef3ff; }
@@ -105,3 +105,4 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhe
 .filmbadge { font-size: 18px; font-weight: 800; padding: 6px 14px; border-radius: 8px; background: #fef3c7; color: #7a4d00; }
 .filmbadge--sandbox { background: #0b5; color: #fff; }
 .notice--hint { background: #eef4ff; color: #1d3a8a; }
+.panel .notice--hint { margin: 10px 0; }

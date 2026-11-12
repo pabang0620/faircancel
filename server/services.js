@@ -3,6 +3,10 @@ import { claimSeed, poolStatus, createSeedFile, resetSession, scanSeeds, SCENARI
 import { liveQuote, cancel, pause, resume, sync, runDueWork } from './cancelFlow.js'
 import { requestOffer } from './offers.js'
 import { llmBackendOf } from './agent/backend.js'
+import { loadRecordings } from './agent/replayAgent.js'
+
+let recordingList = null
+const loadedRecordings = () => (recordingList ||= loadRecordings())
 import { mockDecide } from './agent/mockAgent.js'
 import { summarizeReasons } from './reasonSummary.js'
 import { DAY_MS } from './refundCalc.js'
@@ -36,7 +40,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
       cancelQuote: quote,
       quoteError,
       policy: { by: state.config.merchantName, setAt: state.policyStore.get().setAt },
-      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note } : null,
+      offer: sub.offer ? { ...sub.offer.shown, consumed: sub.offer.consumed, note: sub.offer.note, noteFrom: sub.offer.recorded ? `${sub.offer.recorded.modelLabel}, recorded ${sub.offer.recorded.date}` : null } : null,
       offerUsed: sub.offerRequested,
       pauseResult: sub.pauseResult,
       result: sub.result,
@@ -47,7 +51,8 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
   // Says what really answers as "Agent": Claude only with a key inside the paid window, else the stand-in.
   const agentBlock = () => {
     const backend = llmBackendOf(state.config, state.clock.now())
-    return { mode: backend === 'api' ? 'claude' : backend === 'account' ? 'claude-account' : 'stand-in', model: backend === 'mock' ? null : state.config.anthropicModel }
+    const recorded = backend === 'mock' && state.config.replayRecordedRuns ? loadedRecordings().map((r) => ({ reason: r.reason, scenario: r.scenario, modelLabel: r.modelLabel, date: r.recordedAt.slice(0, 10) })) : []
+    return { mode: backend === 'api' ? 'claude' : backend === 'account' ? 'claude-account' : 'stand-in', model: backend === 'mock' ? null : state.config.anthropicModel, recorded }
   }
 
   function merchantView(sessionId) {
@@ -65,7 +70,7 @@ export function createServices(state, { seedFile = createSeedFile(null), agent =
         refundError: s.refundError || null,
       })),
       agent: agentBlock(),
-      decisions: subs.filter((s) => s.offer).map((s) => ({ subscriptionId: s.id, reason: s.reason, rule: s.offer.rule, agent: s.offer.agent, agentKind: s.offer.agentKind, agentLate: s.offer.agentLate, shown: s.offer.shown, source: s.offer.source, steps: s.offer.steps, shownAt: s.offer.shownAt })),
+      decisions: subs.filter((s) => s.offer).map((s) => ({ subscriptionId: s.id, reason: s.reason, rule: s.offer.rule, agent: s.offer.agent, agentKind: s.offer.agentKind, recorded: s.offer.recorded || null, agentLate: s.offer.agentLate, shown: s.offer.shown, source: s.offer.source, steps: s.offer.steps, shownAt: s.offer.shownAt })),
       activity: state.activity.forSubscriptions(ids).slice(-80),
       reasonSummary: summarizeReasons(subs),
     }

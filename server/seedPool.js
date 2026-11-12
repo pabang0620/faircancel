@@ -84,7 +84,11 @@ export async function claimSeed(state, seedFile, { sessionId, scenario, allowLoc
     throw new HttpError(429, 'Too many new sessions from this network. Try again in an hour, or reset your current session.', 'session_limit')
   }
   const session = ensureSession(state, sessionId)
-  const existing = session.subIds.map((id) => state.subs.get(id)).find((s) => s.scenario === scenario && s.status !== 'CANCELLED')
+  // Only an untouched subscription is handed back: once a reason was sent, the same button gives a new one,
+  // so a judge can try another sentence without Start over (REVIEW_3 F1).
+  const untouched = (s) => !s.reason && !s.offer && !s.offerRequested && !s.pendingCancel && !s.result && !s.refund
+  const reusable = (s) => s.scenario === scenario && untouched(s) && (SCENARIOS[scenario].startsPaused ? s.status === 'SUSPENDED' : s.status === 'ACTIVE')
+  const existing = session.subIds.map((id) => state.subs.get(id)).find(reusable)
   if (existing) return existing
   if (session.subIds.length >= state.config.maxSeedsPerSession) throw new HttpError(429, 'This session already holds the maximum number of subscriptions. Press Start over to begin again.')
 

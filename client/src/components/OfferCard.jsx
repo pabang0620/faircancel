@@ -15,7 +15,7 @@ export default function OfferCard({ view, busy, onPause }) {
     <div className="card card--offer">
       <p><strong>Pause {offer.weeks} weeks instead?</strong>{offer.returnHint ? <span className="muted"> (you said {offer.returnHint})</span> : null}</p>
       <p className="muted small">Billing stops now and restarts on its own about {fmtDate(new Date(Date.now() + offer.weeks * 7 * 86_400_000).toISOString())}. Cancel now stays right above.</p>
-      {offer.note ? <p className="small">{offer.note}</p> : null}
+      {offer.note ? <p className="small">{offer.note}{offer.noteFrom ? <span className="muted"> ({offer.noteFrom})</span> : null}</p> : null}
       <div className="actions">
         <button type="button" className="btn btn--action" onClick={onPause} disabled={busy === 'pause' || offer.consumed}>{busy === 'pause' ? 'Pausing...' : 'Pause'}</button>
       </div>

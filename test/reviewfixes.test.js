@@ -207,3 +207,53 @@ test('seed_scripts_read_buyer_login_from_the_environment_first', () => {
   assert.match(sh, /approveSeeds\.py/)
   assert.match(sh, /seedLive\.js collect/)
 })
+
+test('pressing_pause_again_after_pausing_gives_a_new_subscription_but_an_untouched_one_is_reused', async () => {
+  const env = makeEnv()
+  const first = await env.services.claim(env.sid, 1)
+  assert.equal((await env.services.claim(env.sid, 1)).id, first.id, 'an untouched subscription is reused')
+  await env.services.offer(env.sid, first.id, 'back in about 4 weeks', { forceMock: true })
+  await env.services.pause(env.sid, first.id)
+  const second = await env.services.claim(env.sid, 1)
+  assert.notEqual(second.id, first.id, 'a paused one is finished, the next press starts a fresh one')
+})
+
+test('pause_button_gives_a_new_subscription_after_a_reason_was_sent', async () => {
+  const env = makeEnv({ config: { maxSeedsPerSession: 6 } })
+  const first = await env.services.claim(env.sid, 1)
+  assert.equal((await env.services.claim(env.sid, 1)).id, first.id, 'an untouched one is handed back')
+  await env.services.offer(env.sid, first.id, 'Visiting family until mid-January, then I will be back')
+  const second = await env.services.claim(env.sid, 1)
+  assert.notEqual(second.id, first.id, 'after a reason the same button gives a fresh subscription with an input box')
+  assert.equal(second.reason ?? null, null)
+})
+
+test('judge_hint_is_below_cancel_now_not_above_the_split', () => {
+  const judge = read('client/src/components/JudgePage.jsx')
+  const main = judge.indexOf('<main className="split">')
+  assert.ok(main > 0)
+  assert.equal(judge.slice(judge.indexOf('<div className="judge">'), main).includes('notice--hint'), false, 'no hint between the header and the panels')
+  const panel = read('client/src/components/SubscriberPanel.jsx')
+  assert.ok(panel.indexOf('<CancelNowBar') < panel.indexOf('? hint : null'), 'hint renders after Cancel now')
+})
+
+test('account_backend_never_waits_less_than_15s', async () => {
+  const { agentTimeoutFor } = await import('../server/config.js')
+  assert.equal(agentTimeoutFor('account', '6000'), 15000, 'a 6000 left in .env must not cut off the account model')
+  assert.equal(agentTimeoutFor('account', '20000'), 20000)
+  assert.equal(agentTimeoutFor('account', ''), 15000)
+  assert.equal(agentTimeoutFor('mock', ''), 6000)
+  assert.equal(agentTimeoutFor('api', '8000'), 8000)
+})
+
+test('late_model_still_uses_a_return_date_code_can_read', async () => {
+  const env = makeEnv({ config: { agentTimeoutMs: 40 }, agent: () => new Promise(() => {}) })
+  const v = await env.services.claim(env.sid, 1)
+  const out = await env.services.offer(env.sid, v.id, "Visiting family until mid-January, then I'll be back")
+  const detail = env.state.subs.get(v.id).offer
+  assert.equal(detail.agentLate, true)
+  assert.equal(detail.source, 'date read by code')
+  assert.equal(detail.rule.weeks, 2)
+  assert.equal(out.offer.weeks, 8, 'Nov 12 to Jan 15 is about 9 weeks, the menu value is 8')
+  assert.equal(out.offer.returnHint, 'mid-January')
+})

@@ -1,0 +1,54 @@
+{
+  "id": "step5_billing",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T05:25:04.182Z",
+  "today": "2026-11-12",
+  "scenario": 3,
+  "reason": "I was charged yesterday but couldn't make any class this week",
+  "totalMs": 5313,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2225,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "list_recent_payments",
+      "input": {},
+      "atMs": 2257,
+      "ok": true,
+      "summary": "1 payments"
+    },
+    {
+      "tool": "get_usage_record",
+      "input": {},
+      "atMs": 2549,
+      "ok": true,
+      "summary": "0 classes this week"
+    },
+    {
+      "tool": "quote_refund",
+      "input": {},
+      "atMs": 2559,
+      "ok": true,
+      "summary": "refund $9.00"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "none"
+      },
+      "atMs": 3554,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "none"
+  },
+  "modelText": "You attended no classes this week, so cancelling now would refund the full $9.00 from yesterday's charge."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "step4_hero_b",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T05:24:58.130Z",
+  "today": "2026-11-12",
+  "scenario": 1,
+  "reason": "Back after the holidays, my kid is home",
+  "totalMs": 6051,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 2252,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_subscription_state",
+      "input": {},
+      "atMs": 2269,
+      "ok": true,
+      "summary": "ACTIVE"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "pause",
+        "weeks": 8,
+        "return_hint": "Back after the holidays, my kid is home"
+      },
+      "atMs": 4039,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "pause",
+    "weeks": 8,
+    "return_hint": "Back after the holidays, my kid is home"
+  },
+  "modelText": "I've offered an 8-week pause, which is the closest option on the menu to the end of the holidays. \"Cancel now\" is still on your screen if you'd rather cancel."
+}

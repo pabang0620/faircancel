@@ -27,7 +27,7 @@ const proposeSchema = z.object({ type: z.string().max(20), weeks: z.number().opt
 const answerSchema = z.object({ text: z.string().max(600) })
 
 export function createToolContext({ state, sub, reason }) {
-  return { state, sub, reason, calls: [], lookups: 0, proposal: null, answer: null, capped: false }
+  return { state, sub, reason, calls: [], lookups: 0, proposal: null, answer: null, capped: false, startedAt: Date.now() }
 }
 
 export async function runTool(ctx, name, input = {}) {
@@ -36,7 +36,8 @@ export async function runTool(ctx, name, input = {}) {
     ctx.capped = true
     return { ok: false, result: { error: 'Tool call limit reached. Finish with propose_offer.' } }
   }
-  const step = { tool: name, input, ok: true }
+  // atMs: when the call arrived, counted from the start of the decision (saved in recorded runs).
+  const step = { tool: name, input, ok: true, atMs: ctx.startedAt ? Date.now() - ctx.startedAt : 0 }
   ctx.calls.push(step)
   if (LOOKUPS.has(name)) ctx.lookups += 1
   try {
@@ -83,7 +84,7 @@ async function dispatch(ctx, name, input, state, sub) {
 
 function summarize(name, result) {
   if (name === 'quote_refund') return `refund ${usd(Math.round(Number(result.refund_usd) * 100))}`
-  if (name === 'get_usage_record') return `${result.classes_attended_this_period} classes this week`
+  if (name === 'get_usage_record') return `${result.classes_attended_this_period} ${result.classes_attended_this_period === 1 ? 'class' : 'classes'} this week`
   if (name === 'get_subscription_state') return result.status
   if (name === 'list_recent_payments') return `${result.payments.length} payments`
   if (name === 'get_policy') return `pause ${result.pause_menu_weeks.join('/')}w, no discounts`

@@ -1,0 +1,47 @@
+{
+  "id": "step2_too_expensive",
+  "model": "claude-sonnet-5-5",
+  "modelLabel": "Claude Sonnet",
+  "backend": "account",
+  "recordedAt": "2026-11-12T05:24:44.710Z",
+  "today": "2026-11-12",
+  "scenario": 2,
+  "reason": "too expensive",
+  "totalMs": 7843,
+  "toolCalls": [
+    {
+      "tool": "get_policy",
+      "input": {},
+      "atMs": 3834,
+      "ok": true,
+      "summary": "pause 2/4/6/8w, no discounts"
+    },
+    {
+      "tool": "get_usage_record",
+      "input": {},
+      "atMs": 4906,
+      "ok": true,
+      "summary": "1 classes this week"
+    },
+    {
+      "tool": "quote_refund",
+      "input": {},
+      "atMs": 4936,
+      "ok": true,
+      "summary": "refund $7.71"
+    },
+    {
+      "tool": "propose_offer",
+      "input": {
+        "type": "none"
+      },
+      "atMs": 5977,
+      "ok": true,
+      "summary": ""
+    }
+  ],
+  "proposal": {
+    "type": "none"
+  },
+  "modelText": "Understood. A pause wouldn't help with cost, so I'm not offering one. If you cancel now, your refund is $7.71."
+}

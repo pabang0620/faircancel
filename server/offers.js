@@ -6,6 +6,7 @@ import { mockDecide } from './agent/mockAgent.js'
 import { claudeDecide } from './agent/claudeAgent.js'
 import { accountDecide } from './agent/accountAgent.js'
 import { llmBackendOf } from './agent/backend.js'
+import { findRecording, replayDecide } from './agent/replayAgent.js'
 import { isOutage } from './fallback.js'
 
 // Checks an agent proposal against the policy. Anything outside the menu or not a pause is dropped.
@@ -50,8 +51,26 @@ async function runAgent(state, ctx, agentImpl) {
       ctx.proposal = null
     }
   }
+  // Local mode: a recorded real model run is replayed for its exact sentence, labelled with its date.
+  const recording = backend === 'mock' && state.config.replayRecordedRuns ? findRecording(ctx.reason) : null
+  if (recording) {
+    ctx.agentKind = 'recorded'
+    return replayDecide(ctx, recording)
+  }
   ctx.agentKind = 'stand-in'
   return mockDecide(ctx)
+}
+
+// Without the agent, a return time that code can read ("until mid-January", "six weeks") still decides the
+// pause, the same snap the server applies to a model answer. Otherwise the keyword rule card is shown.
+// (S11 sandbox run: a late model left "until mid-January" on the 2 week rule card.)
+function lateFallback(rule, text, menu, now) {
+  const hint = rule.type === 'pause' ? parseReturnHint(text, now) : null
+  if (hint) {
+    const weeks = pauseWeeksFor(hint.weeks, menu)
+    return weeks ? { shown: { type: 'pause', weeks, returnHint: hint.hint }, source: 'date read by code' } : { shown: { type: 'none' }, source: 'date read by code' }
+  }
+  return { shown: rule.type === 'pause' ? { type: 'pause', weeks: rule.weeks, returnHint: null } : { type: 'none' }, source: 'rule' }
 }
 
 function withTimeout(promise, ms) {
@@ -81,17 +100,20 @@ export async function requestOffer(state, sub, reason, { agent } = {}) {
     const agentArrived = outcome === 'done'
     const agentResult = agentArrived ? validateProposal(ctx.proposal, { menu, reason: text, now }) : null
     const quoteCents = sub.quoteCache?.quote?.cents
-    const shown = agentArrived ? agentResult : (rule.type === 'pause' ? { type: 'pause', weeks: rule.weeks, returnHint: null } : { type: 'none' })
+    const fallback = agentArrived ? null : lateFallback(rule, text, menu, now)
+    const shown = agentArrived ? agentResult : fallback.shown
     if (sub.status !== 'ACTIVE' || sub.pendingCancel) return { offer: { type: 'none' }, discarded: 'cancelled_meanwhile' }
     sub.offer = {
       shown,
-      source: agentArrived ? 'agent' : 'rule',
+      source: agentArrived ? 'agent' : fallback.source,
       rule,
       agent: agentResult,
       agentKind: agentArrived ? ctx.agentKind || 'stand-in' : null,
       agentLate: outcome === 'late',
+      recorded: agentArrived && ctx.recorded ? ctx.recorded : null,
       steps: ctx.calls.map((c) => ({ tool: c.tool, ok: c.ok, summary: c.summary || '' })),
-      note: agentArrived ? sanitizeModelText(ctx.answer || ctx.modelText, quoteCents != null ? [quoteCents] : []) : null,
+      // A recorded reply is dropped when the server re-snapped the pause, so its words never disagree with the card.
+      note: agentArrived && !(ctx.recorded && agentResult?.snappedFrom) ? sanitizeModelText(ctx.answer || ctx.modelText, quoteCents != null ? [quoteCents] : []) : null,
       shownAt: iso(state),
       consumed: false,
     }
